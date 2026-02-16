@@ -1,0 +1,157 @@
+# User Profile Template for Form Auto-Fill
+# Copy this file and customize with your information
+
+# Personal Information
+personal:
+  first_name: John
+  last_name: Doe
+  email: john.doe@example.com
+  phone: +1 (555) 123-4567
+  linkedin: https://linkedin.com/in/johndoe
+  github: https://github.com/johndoe
+  portfolio: https://johndoe.dev
+
+  # Address
+  address:
+    street: 123 Main Street
+    city: Toronto
+    province: ON
+    postal_code: M5H 2N2
+    country: Canada
+
+# Professional Summary
+summary: |
+  Data-driven professional with 3+ years of experience in data analysis,
+  visualization, and machine learning. Proven track record of delivering
+  actionable insights and building scalable data pipelines.
+
+# Work Experience
+experience:
+  - company: Tech Company Inc.
+    title: Data Analyst
+    start_date: 2023-01
+    end_date: present
+    location: Toronto, ON
+    description: |
+      - Built and maintained dashboards serving 500+ users
+      - Reduced data processing time by 60% through automation
+      - Collaborated with cross-functional teams on product analytics
+
+  - company: Consulting Firm LLC
+    title: Junior Analyst
+    start_date: 2021-06
+    end_date: 2022-12
+    location: Mississauga, ON
+    description: |
+      - Conducted statistical analysis for client projects
+      - Developed predictive models using Python and R
+      - Presented findings to C-level stakeholders
+
+# Education
+education:
+  - institution: University of Toronto
+    degree: Bachelor of Science
+    field: Statistics
+    graduation_date: 2021-05
+    gpa: 3.8
+    honors:
+      - Dean's List
+      - Academic Excellence Award
+
+  - institution: Coursera
+    degree: Professional Certificate
+    field: Data Science
+    graduation_date: 2022-08
+
+# Skills
+skills:
+  programming:
+    - Python
+    - R
+    - SQL
+    - JavaScript
+
+  tools:
+    - Tableau
+    - Power BI
+    - Git
+    - Docker
+    - AWS
+
+  data:
+    - Pandas
+    - NumPy
+    - Scikit-learn
+    - TensorFlow
+    - Spark
+
+  soft_skills:
+    - Communication
+    - Problem-solving
+    - Team collaboration
+    - Stakeholder management
+
+# Certifications
+certifications:
+  - name: AWS Certified Cloud Practitioner
+    issuer: Amazon Web Services
+    date: 2023-06
+    credential_id: ABC123XYZ
+
+  - name: Tableau Desktop Specialist
+    issuer: Tableau
+    date: 2022-09
+
+# Languages
+languages:
+  - language: English
+    proficiency: Native
+
+  - language: French
+    proficiency: Intermediate
+
+# Work Authorization
+work_authorization:
+  status: Canadian Citizen
+  # Options: Canadian Citizen, Permanent Resident, Work Permit, Open Work Permit
+
+  requires_sponsorship: false
+
+# Availability
+availability:
+  start_date: 2 weeks notice
+  # Or specific date: 2026-03-01
+
+  willing_to_relocate: false
+
+# Preferences
+preferences:
+  work_arrangement:
+    - Remote
+    - Hybrid
+
+  job_types:
+    - Full-time
+    - Contract
+
+  salary_expectation:
+    min: 70000
+    max: 90000
+    currency: CAD
+
+  industries:
+    - Technology
+    - Finance
+    - Healthcare
+
+# References
+references:
+  available_on_request: true
+
+  contacts:
+    - name: Jane Smith
+      title: Senior Data Scientist
+      company: Tech Company Inc.
+      email: jane.smith@example.com
+      phone: +1 (555) 987-6543
+      relationship: Former Manager

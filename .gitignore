@@ -1,0 +1,174 @@
+# ===================================
+# Sensitive Personal Data
+# ===================================
+
+# Personal resumes and cover letters
+cvs/
+!cvs/.gitkeep
+
+# Job application tracker (contains personal data)
+**/job-applications.xlsx
+**/job-applications*.xlsx
+
+# Personal project descriptions
+exp_lib/
+!exp_lib/.gitkeep
+
+# Interview preparation materials
+interview prep/
+
+# Personal memory files (may contain sensitive info)
+.claude/memory/
+
+# ===================================
+# Environment & Credentials
+# ===================================
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# API keys and secrets
+**/*secret*
+**/*key*
+**/*token*
+.mcp.json
+
+# ===================================
+# Extracted Job Data
+# ===================================
+
+# CSV/JSON files with job data
+cibc_*.csv
+cibc_*.json
+*_jobs_*.csv
+*_jobs_*.json
+filtered jobs/
+**/*_filtered_results.xlsx
+
+# Batch processing orders
+exp_lib/batch_order*.json
+exp_lib/archive/
+
+# ===================================
+# Node.js
+# ===================================
+
+# Dependencies
+node_modules/
+.npm
+.pnp
+.pnp.js
+
+# Package manager files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# ===================================
+# Logs & Debugging
+# ===================================
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Debug files
+snapshot_debug.txt
+nul
+
+# ===================================
+# Testing & Coverage
+# ===================================
+
+# Test coverage
+coverage
+*.lcov
+.nyc_output
+
+# ===================================
+# Build & Temp Files
+# ===================================
+
+# Build outputs
+dist
+build
+out
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===================================
+# Git & Backups
+# ===================================
+
+# Backup files
+*_backup_*.xlsx
+cvs/Excel/backups/
+
+# Git files
+*.orig
+
+# ===================================
+# Scripts & Archived Code
+# ===================================
+
+# Old extraction scripts (archived)
+extract_*.js
+cibc_*.js
+form-autofill-complete.js
+check_results.js
+trigger_single_jd.js
+
+# ===================================
+# Browser Automation
+# ===================================
+
+# Playwright/agent-browser
+.agent-browser/
+playwright-report/
+test-results/
+
+# Screenshots
+screenshots/
+*.png
+*.jpg
+*.jpeg
+
+# ===================================
+# Optional: Keep Example Files
+# ===================================
+
+# Allow example/template files
+!examples/**
+!.env.example
+!**/*.example.*

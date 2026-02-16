@@ -1,0 +1,38 @@
+{
+  "name": "job-automation-toolkit",
+  "version": "1.0.0",
+  "description": "AI-powered job application automation platform using Claude AI agents, n8n workflows, and browser automation",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bluesgg/job-automation-toolkit.git"
+  },
+  "keywords": [
+    "job-automation",
+    "ai-agents",
+    "claude-ai",
+    "n8n",
+    "browser-automation",
+    "job-search",
+    "resume-generation",
+    "cover-letter",
+    "web-scraping",
+    "workflow-automation"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bluesgg/job-automation-toolkit/issues"
+  },
+  "homepage": "https://github.com/bluesgg/job-automation-toolkit#readme",
+  "dependencies": {
+    "agent-browser": "^0.9.1"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

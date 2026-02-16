@@ -1,0 +1,89 @@
+# Example Filter Criteria Configuration
+
+# Acceptable locations
+location:
+  - Toronto, ON
+  - Mississauga, ON
+  - Remote (Canada)
+  - Hybrid
+
+# Required skills (at least one must be present)
+required_skills:
+  technical:
+    - Python
+    - R
+    - SQL
+  tools:
+    - Tableau
+    - Power BI
+    - Excel
+
+# Nice-to-have skills (bonus points)
+preferred_skills:
+  - Machine Learning
+  - AWS
+  - Azure
+  - Statistical modeling
+
+# Job scope filters
+job_scope:
+  # Auto-reject if JD contains these phrases
+  reject_if_contains:
+    - "cold calling"
+    - "door-to-door"
+    - "5+ years sales experience"
+    - "commission-only"
+    - "must have car"
+
+  # Prefer if JD contains these
+  prefer_if_contains:
+    - "data-driven"
+    - "analytics"
+    - "visualization"
+    - "stakeholder management"
+
+# Experience level
+experience:
+  min_years: 0
+  max_years: 5
+  # Reject if requires more than max_years
+
+# Education requirements
+education:
+  acceptable:
+    - "Bachelor's degree"
+    - "Master's degree"
+    - "relevant experience"
+
+  # Auto-reject if requires
+  reject_if_requires:
+    - "PhD"
+    - "CPA designation"
+    - "Professional Engineer (P.Eng)"
+
+# Salary expectations (optional)
+salary:
+  min_salary: 60000
+  currency: CAD
+  # Reject if below minimum (if salary info available)
+
+# Work arrangement preferences
+work_arrangement:
+  acceptable:
+    - Remote
+    - Hybrid
+    - On-site (if in preferred locations)
+
+# Company size preference (optional)
+company:
+  size_preference:
+    - startup
+    - mid-size
+    - enterprise
+
+  # Industries of interest
+  industries:
+    - Technology
+    - Finance
+    - Healthcare
+    - E-commerce
