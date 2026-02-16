@@ -1,6 +1,6 @@
 ---
 name: batch-jd-processor
-description: Batch job description processor using MANUAL REVIEW by parallel subagents. NO automated scripts allowed. Reads Excel/CSV with job data, splits into groups, launches max subagents for human-like analysis against user filter criteria. Outputs color-coded Excel with PASS/REJECT/ERROR classifications and detailed reasoning. Triggers include "批量处理这些JD", "帮我筛选这些职位", "处理Excel里的职位", "batch filter jobs", "用batch jd process".
+description: Batch job description processor using MANUAL REVIEW by parallel subagents. NO automated scripts allowed. Reads Excel/CSV with job data, splits into groups, launches max subagents for human-like analysis against user filter criteria. Outputs color-coded Excel with PASS/REJECT/ERROR classifications and detailed reasoning. Triggers include "batch process these JDs", "help me filter these positions", "process jobs in Excel", "batch filter jobs".
 ---
 
 # Batch JD Processor
@@ -29,9 +29,9 @@ Process job batches through **parallel manual review** by subagents. Each subage
 
 Examples:
 ```json
-{"filter_result": "ERROR", "reason": "JD内容缺失，无法评估职位要求"}
-{"filter_result": "REJECT", "reason": "要求3年经验，用户需要0年entry-level"}
-{"filter_result": "PASS", "reason": "Entry-level Data Analyst，匹配理想岗位，位于Toronto"}
+{"filter_result": "ERROR", "reason": "Missing JD content, cannot evaluate position requirements"}
+{"filter_result": "REJECT", "reason": "Requires 3 years experience, user needs 0-year entry-level"}
+{"filter_result": "PASS", "reason": "Entry-level Data Analyst, matches ideal position, located in Toronto"}
 ```
 
 ## Workflow
@@ -59,11 +59,11 @@ with open('all_jobs.json', 'w', encoding='utf-8') as f:
 ```
 
 ### Step 2: Split into Groups
-Calculate subagents: **num_agents = JD总数 / 5** (每个agent处理5个JD)
+Calculate subagents: **num_agents = Total JDs / 5** (each agent processes 5 JDs)
 
 ```python
 import math
-num_agents = max(1, math.ceil(len(jobs) / 5))  # 每5个JD分配1个agent
+num_agents = max(1, math.ceil(len(jobs) / 5))  # Allocate 1 agent per 5 JDs
 jobs_per_agent = math.ceil(len(jobs) / num_agents)
 
 for i in range(num_agents):
@@ -91,7 +91,7 @@ Save to: /path/to/group_{N}_results.json
 Rules:
 - NO scripts, manual reading only
 - ERROR for data issues, REJECT for criteria failures
-- Specific reasons (e.g. "要求2年经验" not "不符合")
+- Specific reasons (e.g. "Requires 2 years experience" not "Does not meet requirements")
 ```
 
 ### Step 4: Merge & Generate Excel
@@ -135,16 +135,16 @@ wb.save('output.xlsx')
 ### Step 5: Present Results
 
 ```
-📊 批量筛选完成！
-总职位: {total} | ✅ PASS: {pass} | ❌ REJECT: {reject} | ⚠️ ERROR: {error}
+📊 Batch Filtering Complete!
+Total: {total} | ✅ PASS: {pass} | ❌ REJECT: {reject} | ⚠️ ERROR: {error}
 
-🎯 推荐申请职位（Top 5）:
+🎯 Recommended Positions (Top 5):
 [List PASS jobs with title, location, reason, URL]
 
-📋 拒绝原因统计:
+📋 Rejection Reason Statistics:
 [Group REJECT by reason with counts]
 
-⚠️ 错误统计:
+⚠️ Error Statistics:
 [Group ERROR by reason with counts]
 
 [Excel download link]
@@ -155,7 +155,7 @@ wb.save('output.xlsx')
 ✅ Read data quality first (missing JD → ERROR, not REJECT)
 ✅ Read full job description, don't skim
 ✅ Check ALL criteria (location, experience, certs, position type, avoid)
-✅ Specific reasoning ("要求3年经验" not "不符合要求")
+✅ Specific reasoning ("Requires 3 years experience" not "Does not meet requirements")
 ✅ Handle edge cases (bilingual, "Associate" titles, "preferred" vs "required")
 
 ## Common Mistakes

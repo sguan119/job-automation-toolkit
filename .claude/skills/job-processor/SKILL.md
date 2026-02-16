@@ -1,6 +1,6 @@
 ---
 name: job-processor
-description: End-to-end job application processor. Orchestrates the complete pipeline - receives JDs, triggers cover-letter-generator skill to send to n8n, waits for PDF generation, then runs job-application-tracker skill to organize files and update Excel. Use when user says "帮我处理这些JD", "process these jobs", "生成简历和cover letter", or when user provides one or more job descriptions for full end-to-end processing.
+description: End-to-end job application processor. Orchestrates the complete pipeline - receives JDs, triggers cover-letter-generator skill to send to n8n, waits for PDF generation, then runs job-application-tracker skill to organize files and update Excel. Use when user says "process these JDs", "process these jobs", "generate resumes and cover letters", or when user provides one or more job descriptions for full end-to-end processing.
 ---
 
 # Job Processor

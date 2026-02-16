@@ -1,6 +1,6 @@
 ---
 name: job-application-tracker
-description: Organize job application materials (resume/cover letter PDFs) and maintain Excel tracking system. Reads order files from cover-letter-generator, matches files by key-based naming, creates date-based folder structure, moves files, generates abbreviated filenames, and updates Excel tracker with hyperlinks. Use when user says "帮我整理文件", "organize the files", "整理简历", or after cover-letter-generator has finished generating files. Also use when user wants to update the job applications Excel tracker.
+description: Organize job application materials (resume/cover letter PDFs) and maintain Excel tracking system. Reads order files from cover-letter-generator, matches files by key-based naming, creates date-based folder structure, moves files, generates abbreviated filenames, and updates Excel tracker with hyperlinks. Use when user says "organize the files", "organize resumes", "organize application materials", or after cover-letter-generator has finished generating files. Also use when user wants to update the job applications Excel tracker.
 ---
 
 # Job Application Tracker

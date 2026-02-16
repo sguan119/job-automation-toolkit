@@ -1,6 +1,6 @@
 ---
 name: cover-letter-generator
-description: Batch process job descriptions by triggering the n8n cover-letter-generator workflow via n8n MCP tools. Reads JDs from Excel/text files, triggers workflow for each JD with intervals, generates order files for tracking. Use when the user wants to generate cover letters and resumes for multiple positions. Triggers include "帮我批量生成", "process these JDs", "generate cover letters for these positions", "send job descriptions to n8n", or when the user provides multiple job descriptions for batch processing.
+description: Batch process job descriptions by triggering the n8n cover-letter-generator workflow via n8n MCP tools. Reads JDs from Excel/text files, triggers workflow for each JD with intervals, generates order files for tracking. Use when the user wants to generate cover letters and resumes for multiple positions. Triggers include "batch generate these", "process these JDs", "generate cover letters for these positions", "send job descriptions to n8n", or when the user provides multiple job descriptions for batch processing.
 ---
 
 # Cover Letter Generator

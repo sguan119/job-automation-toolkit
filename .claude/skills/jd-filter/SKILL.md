@@ -1,120 +1,117 @@
 ---
 name: jd-filter
-description: JD（职位描述）筛选与分析工具。当用户说「帮我看这个JD」「分析这个职位」「这个工作怎么样」或直接粘贴职位描述时使用此技能。功能包括：(1) 根据用户预设的 filter 判断 JD 是否符合要求，(2) 输出 location、job scope、requirements 的简要 summary，(3) 保存和更新用户的筛选条件。当用户说「设置/更新我的filter」「我的要求是...」时也使用此技能来更新筛选条件。
+description: Job description filtering and analysis tool. Analyzes JDs against user-defined filter criteria, outputs structured summaries with PASS/REJECT decisions, and saves/updates user preferences. Use when user says "analyze this JD", "is this job good", pastes a job description, or wants to "set/update my filter criteria".
 ---
 
-# JD Filter 职位筛选工具
+# JD Filter - Job Description Analysis Tool
 
-根据用户预设的筛选条件，快速判断 JD 是否符合要求，并输出结构化摘要。
+Quickly evaluate job descriptions against user-defined filter criteria and output structured summaries.
 
-## 工作流程
+## Workflow
 
-### 1. 每次对话开始时检查 Filter
+### 1. Check Filter at Start of Conversation
 
-**首次使用或用户明确要求时：**
-- 读取 `user_filter.json` 获取用户的筛选条件
-- 如果 filter 尚未设置，提示用户先设置筛选条件
+**First use or when explicitly requested:**
+- Read `user_filter.json` to get user's filter criteria
+- If filter not set, prompt user to configure it first
 
-**日常使用：**
-- 分析 JD 前，自动读取 `user_filter.json`
-- 无需每次都向用户确认，直接应用已保存的条件
+**Daily use:**
+- Auto-read `user_filter.json` before analyzing JD
+- No need to confirm with user each time, apply saved criteria directly
 
-### 2. 自动检测并更新 Filter
+### 2. Auto-Detect and Update Filter
 
-**触发条件：**
-当用户在对话中提到新的筛选要求时，自动更新筛选条件。触发关键词包括：
-- 「我的要求是...」「我希望...」「我不想...」
-- 「帮我筛选...」「只看...」「排除...」
-- 「薪资要...」「地点必须...」「不能有...」
-- 「更新我的filter」「修改筛选条件」「储存我的筛选条件」
+**Trigger conditions:**
+When user mentions new filter requirements in conversation. Trigger keywords include:
+- "My requirements are...", "I want...", "I don't want..."
+- "Filter for...", "Only look at...", "Exclude..."
+- "Salary must be...", "Location must be...", "Cannot have..."
+- "Update my filter", "Modify filter criteria", "Save my preferences"
 
-**更新流程：**
-1. 读取当前的 `user_filter.json`
-2. 解析用户新提出的要求
-3. 合并到现有 filter 中（新要求优先）
-4. 更新 `user_filter.json` 文件
-5. **打包技能为 .skill 文件并发送给用户**
-   - 使用打包脚本：`python /mnt/skills/examples/skill-creator/scripts/package_skill.py /home/claude/jd-filter /mnt/user-data/outputs`
-   - 简洁确认：「✅ 筛选条件已更新并已保存」
-6. **然后继续处理 JD 筛选**（如果用户同时提供了 JD）
+**Update process:**
+1. Read current `user_filter.json`
+2. Parse new requirements from user
+3. Merge into existing filter (new requirements take priority)
+4. Update `user_filter.json` file
+5. Briefly confirm: "✅ Filter criteria updated and saved"
+6. **Then continue processing JD analysis** (if user provided JD simultaneously)
 
-**Filter 常见类别：**
-- **location**: 地点要求（must_include, must_exclude）
-- **requirements**: 硬性要求（certifications, student_status, experience等）
-- **application_philosophy**: 申请策略（approach, threshold, avoid列表）
-- **user_background**: 用户背景（education, skills, projects）
-- **ideal_positions**: 理想岗位类型列表
-- **salary_range**: 薪资范围
-- **work_authorization**: 签证/工作许可要求
-- **company_preferences**: 公司偏好（规模、行业、排除名单）
+**Common filter categories:**
+- **location**: Location requirements (must_include, must_exclude)
+- **requirements**: Hard requirements (certifications, student_status, experience, etc.)
+- **application_philosophy**: Application strategy (approach, threshold, avoid list)
+- **user_background**: User background (education, skills, projects)
+- **ideal_positions**: List of ideal position types
+- **salary_range**: Salary range
+- **work_authorization**: Visa/work permit requirements
+- **company_preferences**: Company preferences (size, industry, exclude list)
 
-**示例：**
-用户说：「我不想申请薪资低于$25/小时的岗位」
-→ 自动更新 `user_filter.json` 中的 `salary_range.minimum` 为 25
-→ 打包整个技能为 .skill 文件并发送给用户
-→ 回复：「✅ 筛选条件已更新并已保存：最低薪资要求 $25/小时」
-→ 如果用户同时提供了 JD，继续进行筛选分析
+**Example:**
+User says: "I don't want to apply to positions paying less than $25/hour"
+→ Auto-update `salary_range.minimum` to 25 in `user_filter.json`
+→ Reply: "✅ Filter criteria updated and saved: Minimum salary requirement $25/hour"
+→ If user provided JD simultaneously, continue with analysis
 
-### 3. 分析 JD
+### 3. Analyze JD
 
-当用户粘贴 JD 时，按以下步骤处理：
+When user pastes a JD, process with following steps:
 
-#### Step 1: 提取关键信息
-从 JD 中提取：
-- Location（地点、remote policy）
-- Job Scope（核心职责，2-3 句话概括）
-- Requirements（必须条件 vs 加分项，学历、经验、技能）
-- Visa/Sponsorship 信息（如有提及）
-- 其他与 filter 相关的信息
+#### Step 1: Extract Key Information
+Extract from JD:
+- Location (city, remote policy)
+- Job Scope (core responsibilities, 2-3 sentence summary)
+- Requirements (must-have vs nice-to-have, education, experience, skills)
+- Visa/Sponsorship information (if mentioned)
+- Other filter-relevant information
 
-#### Step 2: 对比 Filter
-将提取的信息与用户的 filter 逐条对比。
+#### Step 2: Compare Against Filter
+Compare extracted information against user's filter criteria point by point.
 
-#### Step 3: 输出结果
+#### Step 3: Output Results
 
-**输出格式（REJECT 时）：**
+**Output format (REJECT):**
 
 ```
 ## 🔴 REJECT
 
-**拒绝理由：**
-- [核心原因1：领域不匹配/技能浪费/职业倒退等]
-- [核心原因2（如有）]
+**Rejection Reasons:**
+- [Core reason 1: Field mismatch/Skill waste/Career regression, etc.]
+- [Core reason 2 (if applicable)]
 
-**📍 Location:** [地点] (✅/❌)
-**💼 Job Scope:** [1-2句话核心职责]
-**📋 Requirements:** [3-5个关键要求，用逗号分隔]
+**📍 Location:** [Location] (✅/❌)
+**💼 Job Scope:** [1-2 sentence core responsibilities]
+**📋 Requirements:** [3-5 key requirements, comma-separated]
 ```
 
-**输出格式（PASS 时）：**
+**Output format (PASS):**
 
 ```
 ## 🟢 PASS
 
-**📍 Location:** [地点] (✅)
-**💼 Job Scope:** [1-2句话核心职责]
-**📋 Requirements:** [3-5个关键要求，用逗号分隔]
+**📍 Location:** [Location] (✅)
+**💼 Job Scope:** [1-2 sentence core responsibilities]
+**📋 Requirements:** [3-5 key requirements, comma-separated]
 
-**匹配度：** [为什么适合，1-2句话]
-**申请建议：** [Cover letter要点，1句话]
+**Match Score:** [Why suitable, 1-2 sentences]
+**Application Tip:** [Cover letter key points, 1 sentence]
 ```
 
-## 筛选哲学
+## Filtering Philosophy
 
-用户的筛选策略：
-- **Threshold**: `minimum_requirements_met` - 能达到最低申请要求就申请
-- **不要过度筛选**: 如果用户满足 minimum qualifications，就应该 PASS
-- **避免主观判断**: 不要对职位"含金量"、"是否真正的数据分析"等进行主观评判
-- **举例**: 如果 JD 要求"Bachelor's in Statistics, SQL, Excel"，而用户有 Statistics 硕士、会 SQL 和 Excel，即使职位主要是 reporting 而不是 advanced analytics，也应该 PASS
+User's filtering strategy:
+- **Threshold**: `minimum_requirements_met` - Apply if minimum requirements are met
+- **Don't over-filter**: If user meets minimum qualifications, should PASS
+- **Avoid subjective judgment**: Don't judge position "quality", "whether it's real data analysis", etc.
+- **Example**: If JD requires "Bachelor's in Statistics, SQL, Excel" and user has Master's in Statistics, knows SQL and Excel, even if position is mainly reporting rather than advanced analytics, should still PASS
 
-**常见过度筛选错误：**
-- ❌ "这个岗位看起来更像 reporting 而不是真正的数据分析" → 只要用户满足要求就 PASS
-- ❌ "虽然符合要求但职位含金量不高" → 不是我们判断的范畴
-- ❌ "这个岗位技术栈不够前沿" → 只看是否符合 filter，不评判职位价值
+**Common over-filtering mistakes:**
+- ❌ "This position seems more like reporting than real data analysis" → PASS if user meets requirements
+- ❌ "Meets requirements but position quality is low" → Not our scope to judge
+- ❌ "Position tech stack not cutting-edge enough" → Only check filter compliance, don't evaluate position value
 
-## 注意事项
+## Important Notes
 
-- 判断要基于 JD 明确写出的信息，不要推测
-- 如果 JD 没有提及某个 filter 相关信息（如未说明是否 sponsor），标注为「未提及」
-- Summary 要简洁，每个部分控制在 2-3 行内
-- 用中文输出，但保留 JD 中的专有名词（如职位名、公司名、技术栈）
+- Base judgment on explicitly stated JD information, don't speculate
+- If JD doesn't mention filter-relevant info (e.g., sponsorship not mentioned), mark as "Not mentioned"
+- Keep summaries concise, each section within 2-3 lines
+- Output in English, but preserve proper nouns from JD (position titles, company names, tech stack)

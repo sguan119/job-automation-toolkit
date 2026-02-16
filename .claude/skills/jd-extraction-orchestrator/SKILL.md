@@ -1,6 +1,6 @@
 ---
 name: jd-extraction-orchestrator
-description: Extract job listings and full JDs from any career site (Workday, Greenhouse, Lever, custom). Use when user provides a career URL, says "extract jobs", "提取职位", "提取链接", "提取JD", "scrape career site", or any Workday URL (wd3.myworkdayjobs.com). Handles site detection, pagination, full JD extraction, self-check, retry, validation, and JSON/CSV/Excel output. Supports 20+ pre-configured Workday company templates.
+description: Extract job listings and full JDs from any career site (Workday, Greenhouse, Lever, custom). Use when user provides a career URL, says "extract jobs", "extract job listings", "extract JD", "scrape career site", or any Workday URL (wd3.myworkdayjobs.com). Handles site detection, pagination, full JD extraction, self-check, retry, validation, and JSON/CSV/Excel output. Supports 20+ pre-configured Workday company templates.
 ---
 
 # JD Extraction Orchestrator
