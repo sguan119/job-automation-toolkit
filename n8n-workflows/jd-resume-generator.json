@@ -1,0 +1,1126 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Resume Generator",
+        "formDescription": "Paste the job description to generate a tailored resume",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Job Description",
+              "fieldType": "textarea",
+              "placeholder": "Paste the full job description here...",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6fc16644-add8-44b3-abf9-636df3ce6470",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        3968,
+        8112
+      ],
+      "webhookId": "67c28eda-689a-474c-ba36-773ed5400792"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "69106628-7cf7-4d7a-b560-e519fb20758c",
+      "name": "Claude - JD Analysis",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        4272,
+        8336
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract TOP 10 skills from this job description, ranked by importance.\n\n<job_description>\n{{ $json['Job Description'] }}\n</job_description>\n\n<ranking_criteria>\n- Higher rank: mentioned multiple times, marked required/must-have, appears in title/summary\n- Lower rank: mentioned once, listed as nice-to-have/preferred\n</ranking_criteria>\n\n<rules>\n1. Extract EXACT keywords verbatim from JD (preserve original phrasing)\n2. Categorize: technical | soft | domain\n3. If fewer than 10 skills exist, return only what's found\n</rules>\n\nReturn ONLY valid JSON:\n{\"top_10_skills\": [{\"rank\": 1, \"skill\": \"Python\", \"category\": \"technical\", \"jd_keywords\": [\"Python\", \"scripting\"]}], \"job_title\": \"Data Analyst\", \"company_focus\": \"Business intelligence\"}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "1d84bcb2-59ce-4b97-a794-49428b751646",
+      "name": "AI Agent - Analyze JD",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        4192,
+        8112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nlet jdAnalysis;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    jdAnalysis = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  jdAnalysis = {\n    top_10_skills: [],\n    job_title: 'Unknown',\n    company_focus: 'Unknown',\n    error: e.message\n  };\n}\n\n// Get original JD from Form Trigger\nconst formData = $('Form Trigger').first().json;\nconst originalJD = formData['Job Description'] || '';\n\nreturn [{\n  json: {\n    jobDescription: originalJD,\n    jdAnalysis: jdAnalysis,\n    top3Skills: jdAnalysis.top_10_skills?.slice(0, 3) || []\n  }\n}];"
+      },
+      "id": "a066b7c1-e424-4bdf-91db-bea991d47007",
+      "name": "Parse JD Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4544,
+        8112
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/edu_master_course.md",
+        "options": {}
+      },
+      "id": "d21cc72c-15a6-4d07-b00e-690ccfaff413",
+      "name": "Read Master Courses File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        4768,
+        7584
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const previousData = $('Parse JD Analysis').first().json;\n\nlet masterCoursesContent = '';\ntry {\n  // Use n8n's built-in helper to read binary data (handles filesystem-v2 mode)\n  const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  masterCoursesContent = binaryDataBuffer.toString('utf-8');\n} catch (e) {\n  masterCoursesContent = '';\n}\n\nreturn [{\n  json: {\n    ...previousData,\n    masterCoursesContent: masterCoursesContent,\n    branch: 'master_courses'\n  }\n}];"
+      },
+      "id": "d513d769-e20c-43a6-a1cf-61074a8dcf28",
+      "name": "Process Master Courses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4992,
+        7584
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Select courses most relevant to the target job skills.\n\n<target_skills>\n{{ JSON.stringify($json.jdAnalysis.top_10_skills?.slice(0, 5).map(s => s.skill) || []) }}\n</target_skills>\n\n<available_courses>\n{{ $json.masterCoursesContent }}\n</available_courses>\n\n<rules>\n1. Select 4-6 courses with strongest skill alignment\n2. Prioritize courses matching top-ranked skills\n3. Return EXACT course names as listed\n4. If no strong matches, return empty array\n</rules>\n\nReturn ONLY valid JSON: {\"selected_courses\": [\"Machine Learning\", \"Data Mining\"]}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "530bedb7-cd08-41d3-8110-3f4359e0d0ea",
+      "name": "AI - Extract Master Courses",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        5216,
+        7472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nlet coursesData;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    coursesData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  coursesData = { selected_courses: [] };\n}\n\nreturn [{\n  json: {\n    masterCourses: coursesData.selected_courses || [],\n    branch: 'master_courses'\n  }\n}];"
+      },
+      "id": "eaa66e8a-d399-4ebe-8107-f5b69439085d",
+      "name": "Parse Master Courses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        7584
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/edu_bech_course.md",
+        "options": {}
+      },
+      "id": "c190a601-e76b-4322-8cf7-1a1312544415",
+      "name": "Read Bachelor Courses File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        4768,
+        7984
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const previousData = $('Parse JD Analysis').first().json;\n\nlet bachelorCoursesContent = '';\ntry {\n  // Use n8n's built-in helper to read binary data (handles filesystem-v2 mode)\n  const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  bachelorCoursesContent = binaryDataBuffer.toString('utf-8');\n} catch (e) {\n  bachelorCoursesContent = '';\n}\n\nreturn [{\n  json: {\n    ...previousData,\n    bachelorCoursesContent: bachelorCoursesContent,\n    branch: 'bachelor_courses'\n  }\n}];"
+      },
+      "id": "b8d8e8aa-5b7f-4a04-812b-9e5c25a992fe",
+      "name": "Process Bachelor Courses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4992,
+        7984
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Select courses most relevant to the target job skills.\n\n<target_skills>\n{{ JSON.stringify($json.jdAnalysis.top_10_skills?.slice(0, 5).map(s => s.skill) || []) }}\n</target_skills>\n\n<available_courses>\n{{ $json.bachelorCoursesContent }}\n</available_courses>\n\n<rules>\n1. Select 4-6 courses with strongest skill alignment\n2. Prioritize courses matching top-ranked skills\n3. Return EXACT course names as listed\n4. If no strong matches, return empty array\n</rules>\n\nReturn ONLY valid JSON: {\"selected_courses\": [\"Statistics\", \"Linear Algebra\"]}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "07a08cf5-b002-440b-86b3-050bc8cdb5b3",
+      "name": "AI - Extract Bachelor Courses",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        5216,
+        7984
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nlet coursesData;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    coursesData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  coursesData = { selected_courses: [] };\n}\n\nreturn [{\n  json: {\n    bachelorCourses: coursesData.selected_courses || [],\n    branch: 'bachelor_courses'\n  }\n}];"
+      },
+      "id": "1a3c916f-0803-455e-9448-c76923a9fe8e",
+      "name": "Parse Bachelor Courses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        7984
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/relevant_skills.md",
+        "options": {}
+      },
+      "id": "cebe41ad-90b9-4ac9-9a5a-976ae4be0ffc",
+      "name": "Read Skills File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        5568,
+        8224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const previousData = $('Parse JD Analysis').first().json;\n\nlet skillsContent = '';\ntry {\n  // Use n8n's built-in helper to read binary data (handles filesystem-v2 mode)\n  const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  skillsContent = binaryDataBuffer.toString('utf-8');\n} catch (e) {\n  skillsContent = '';\n}\n\nreturn [{\n  json: {\n    ...previousData,\n    skillsContent: skillsContent,\n    branch: 'skills'\n  }\n}];"
+      },
+      "id": "213660a3-0ef4-4cde-804e-55f8c9ceec53",
+      "name": "Process Skills",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5856,
+        8224
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Match user's skills to JD requirements and organize by category.\n\n<jd_required_skills>\n{{ JSON.stringify($json.jdAnalysis.top_10_skills, null, 2) }}\n</jd_required_skills>\n\n<user_skills>\n{{ $json.skillsContent }}\n</user_skills>\n\n<inflation_rules>\nALLOWED to add (low learning curve, commonly assumed):\n- Version control: Git, GitHub\n- Collaboration: Jira, Confluence, Slack\n- Basic tools: VS Code, CLI, basic SQL\n\nNEVER add (requires significant learning):\n- Advanced: ML/AI, System Design, Kubernetes, Terraform\n- Certifications: AWS Solutions Architect, CKA\n- Languages/frameworks user hasn't shown evidence of\n</inflation_rules>\n\n<rules>\n1. Prioritize skills matching JD keywords exactly\n2. Group into logical categories (max 4 categories)\n3. Order skills within category by JD relevance\n4. Use JD terminology when user skill matches\n5. CRITICAL: Include ONLY 4-6 skills per category maximum\n6. Focus on most relevant skills - quality over quantity\n7. Total skills across all categories should not exceed 20\n8. CRITICAL: Each complete line (category label + colon + skills) MUST be under 86 characters\n9. If a line exceeds 86 characters, reduce the number of skills in that category\n10. Use short category names to leave more space for skills\n</rules>\n\nReturn ONLY valid JSON: {\"skills_by_category\": {\"Programming Languages\": [\"Python\", \"SQL\"], \"Tools\": [\"Git\", \"Docker\"]}}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "dbbb10c1-95a2-4427-8216-e5a9fa4beb34",
+      "name": "AI - Extract Skills",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        6144,
+        8128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nlet skillsData;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    skillsData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  skillsData = { skills_by_category: {} };\n}\n\nreturn [{\n  json: {\n    skillsByCategory: skillsData.skills_by_category || {},\n    branch: 'skills'\n  }\n}];"
+      },
+      "id": "c4fa4c45-14ac-4a4c-abbe-1d8b1468d5b6",
+      "name": "Parse Skills",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6496,
+        8224
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/relevant_project/*.md",
+        "options": {}
+      },
+      "id": "a4a323aa-02ea-4e02-8ea2-73597c1a6a00",
+      "name": "Read Project Files",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        4768,
+        8528
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const previousData = $('Parse JD Analysis').first().json;\nconst items = $input.all();\n\nlet projectsContent = '';\nconst projectsMap = {}; // file_name -> content mapping\nconst debugInfo = []; // DEBUG: track file processing\n\ntry {\n  // Process each file item using n8n's built-in helper (handles filesystem-v2 mode)\n  for (let i = 0; i < items.length; i++) {\n    const item = items[i];\n    try {\n      const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, 'data');\n      const content = binaryDataBuffer.toString('utf-8');\n      \n      // Extract file name from binary metadata\n      const fileName = item.binary?.data?.fileName || '';\n      // Remove .md extension and path to get clean file name\n      const cleanName = fileName.replace(/\\.md$/i, '').replace(/^.*[\\\\\\/]/, '');\n      \n      // Add file name marker before content\n      projectsContent += `[FILE: ${cleanName}]\\n${content}\\n\\n`;\n      \n      // DEBUG: Log file processing\n      debugInfo.push({\n        originalFileName: fileName,\n        cleanName: cleanName,\n        contentLength: content.length,\n        firstLine: content.split('\\n')[0],\n        secondLine: content.split('\\n')[1] || 'NO SECOND LINE'\n      });\n      \n      if (cleanName) {\n        projectsMap[cleanName] = content;\n      }\n    } catch (e) {\n      debugInfo.push({ error: e.message, index: i });\n    }\n  }\n} catch (error) {\n  projectsContent = '';\n}\n\nreturn [{\n  json: {\n    ...previousData,\n    projectsContent: projectsContent,\n    projectsMap: projectsMap,\n    branch: 'projects',\n    debugProcessProjects: {\n      filesProcessed: debugInfo,\n      mapKeys: Object.keys(projectsMap),\n      totalFiles: items.length\n    }\n  }\n}];"
+      },
+      "id": "0c955399-2fcc-4fe3-88fa-f33637ea3287",
+      "name": "Process Projects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4992,
+        8528
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Select exactly 3 projects that best demonstrate the target job skills.\n\n<top_jd_skills>\n{{ JSON.stringify($json.top3Skills, null, 2) }}\n</top_jd_skills>\n\n<available_projects>\n{{ $json.projectsContent }}\n</available_projects>\n\n<file_format>\nEach project starts with [FILE: filename] marker.\nExample: [FILE: car-price-regression]\nYou MUST extract the exact filename from this marker.\n</file_format>\n\n<selection_criteria>\n1. CRITICAL: Only select from available_projects - NEVER invent projects\n2. Match each project to one of the top 3 JD skills\n3. Prefer projects with: quantifiable results, relevant tech stack, recent dates\n4. Each project should demonstrate a DIFFERENT skill if possible\n</selection_criteria>\n\n<output_rules>\n1. CRITICAL: Extract file_name from [FILE: xxx] marker EXACTLY as written\n2. DO NOT modify, translate, or generate file names based on project titles\n3. Example: If you see [FILE: car-price-regression], return \"car-price-regression\"\n4. Rank by relevance (best match = index 0)\n5. Keep relevance_reason under 15 words\n</output_rules>\n\nReturn ONLY valid JSON: {\"selected_projects\": [{\"file_name\": \"car-price-regression\", \"matched_skill\": \"Python\", \"relevance_reason\": \"Built ETL pipeline processing 1M+ records\"}]}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "ef2d06cf-813f-44a1-bc7d-f6b608362cdf",
+      "name": "AI - Select Top 3 Projects",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        5216,
+        8528
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst previousData = $('Process Projects').first().json;\nlet projectsData;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    projectsData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  projectsData = { selected_projects: [] };\n}\n\n// Get projects map from Process Projects node\nconst projectsMap = previousData.projectsMap || {};\n\n// DEBUG: Track available keys\nconst availableKeys = Object.keys(projectsMap);\n\n// Enrich selected projects with their content from the map\nconst enrichedProjects = (projectsData.selected_projects || []).map(project => {\n  const fileName = project.file_name || '';\n  let matchedKey = '';\n  \n  // Try exact match first, then case-insensitive match\n  let projectContent = projectsMap[fileName] || '';\n  if (projectContent) {\n    matchedKey = fileName;\n  }\n  \n  // If no exact match, try case-insensitive and normalized matching\n  if (!projectContent) {\n    const normalizedFileName = fileName.toLowerCase().replace(/[\\s-]/g, '_').replace(/_+/g, '_');\n    for (const [key, value] of Object.entries(projectsMap)) {\n      const normalizedKey = key.toLowerCase().replace(/[\\s-]/g, '_').replace(/_+/g, '_');\n      if (normalizedKey === normalizedFileName || key.toLowerCase() === fileName.toLowerCase()) {\n        projectContent = value;\n        matchedKey = key;\n        break;\n      }\n    }\n  }\n  \n  return {\n    ...project,\n    projectContent: projectContent,\n    matchedKey: matchedKey\n  };\n});\n\n// Return as individual items for parallel AI processing\nreturn enrichedProjects.map(project => ({\n  json: {\n    jdAnalysis: previousData.jdAnalysis,\n    top3Skills: previousData.top3Skills,\n    currentProject: project,\n    projectContent: project.projectContent,\n    projectFileName: project.file_name,\n    branch: 'projects',\n    debug: {\n      availableKeys: availableKeys,\n      requestedFileName: project.file_name,\n      matchedKey: project.matchedKey,\n      contentFound: !!project.projectContent,\n      contentLength: project.projectContent?.length || 0,\n      contentPreview: project.projectContent?.substring(0, 200) || 'EMPTY'\n    }\n  }\n}));"
+      },
+      "id": "55d615c9-7a11-4c47-9812-f4e0e8f060ce",
+      "name": "Parse Selected Projects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        8528
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write resume bullet points for this project.\n\n<context>\nTarget skill: {{ $json.currentProject.matched_skill }}\nRelevance: {{ $json.currentProject.relevance_reason }}\nJD keywords: {{ JSON.stringify($json.jdAnalysis.top_10_skills?.map(s => s.jd_keywords).flat() || []) }}\n</context>\n\n<project>\n{{ $json.projectContent }}\n</project>\n\n<sentence_format>\nAction Verb + What You Did + Measurable Result\nExamples:\n- Developed <b>REST API</b> using Python Flask, reducing latency by 40%\n- Automated data pipeline processing 500K daily records with 99.9% accuracy\n</sentence_format>\n\n<rules>\n1. Use JD keywords VERBATIM when applicable\n2. Use <b> tags for max 3 key terms per project\n3. Use numerals: 3, 50%, 100K (not three, fifty percent)\n4. NO bullet/dash prefix - sentences only (bullet points will be added later)\n5. Integrate tech naturally (no separate \"Technologies:\" line)\n6. Generate 3-5 sentences per project\n7. CRITICAL: Each sentence MUST be under 86 characters (including spaces and <b> tags)\n8. CRITICAL: Project title MUST be under 60 characters\n</rules>\n\n<date_extraction>\nCRITICAL: Extract the project date from LINE 2 of the project content.\n\nThe date is ALWAYS on the second line, immediately after the title, in format:\n\"Month YYYY - Month YYYY\" (e.g., \"September 2024 - December 2024\")\nor \"Month YYYY - Present\" (e.g., \"December 2025 - Present\")\n\nSimply copy the date string from line 2 exactly as written.\nDo NOT return \"Recent\" - the date is always available on line 2.\n</date_extraction>\n\nReturn ONLY valid JSON: {\"project_title\": \"Real-time Data Pipeline\", \"project_date\": \"Jan 2024 - Mar 2024\", \"original_name\": \"{{ $json.projectFileName }}\", \"matched_skill\": \"{{ $json.currentProject.matched_skill }}\", \"impact_sentences\": [\"Built <b>ETL pipeline</b> processing 1M+ records daily\"]}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "a41794c7-3237-41a8-a8e2-f40baed5a060",
+      "name": "AI - Write Impact for Project",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        5792,
+        8528
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const response = $input.item.json;\nlet impactData;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    impactData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  impactData = {\n    project_title: 'Unknown Project',\n    original_name: '',\n    matched_skill: '',\n    impact_sentences: [],\n    technologies_used: []\n  };\n}\n\nreturn {\n  json: {\n    projectWithImpact: impactData,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "4f30c00b-872f-41a2-8086-a76f386c7d76",
+      "name": "Parse Impact Sentence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6208,
+        8528
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Collect all project impacts\nconst projectsWithImpact = items\n  .map(item => item.json.projectWithImpact)\n  .filter(p => p && p.impact_sentences && p.impact_sentences.length > 0);\n\nreturn [{\n  json: {\n    projectsWithImpact: projectsWithImpact,\n    branch: 'projects'\n  }\n}];"
+      },
+      "id": "326cbf1b-ca59-407a-ae2e-834c2afd8468",
+      "name": "Aggregate Project Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6496,
+        8528
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "3795abc0-05b6-48c9-9584-3e630e9daeb1",
+      "name": "Merge Courses",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        5856,
+        7776
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "6efd7d80-ed8d-4b15-8a7a-4deb3d13015c",
+      "name": "Merge Skills & Projects",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        6720,
+        8384
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "bf2f6652-b2b6-410d-953a-8fa658fd16ed",
+      "name": "Merge All Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        6944,
+        8048
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Fixed personal info\nconst PERSONAL_INFO = {\n  name: 'Your Name',\n  email: 'sam.guan@example.com',\n  phone: '(123) 456-7890',\n  linkedin: 'https://linkedin.com/in/samguan',\n  github: 'https://github.com/samguan',\n  location: 'San Francisco, CA'\n};\n\n// Extract data from each branch\nlet masterCourses = [];\nlet bachelorCourses = [];\nlet skillsByCategory = {};\nlet projectsWithImpact = [];\nlet unmatchedSkills = [];\n\nfor (const item of items) {\n  const data = item.json;\n  if (data.masterCourses) masterCourses = data.masterCourses;\n  if (data.bachelorCourses) bachelorCourses = data.bachelorCourses;\n  if (data.skillsByCategory) skillsByCategory = data.skillsByCategory;\n  if (data.projectsWithImpact) projectsWithImpact = data.projectsWithImpact;\n  if (data.unmatchedSkills) unmatchedSkills = data.unmatchedSkills;\n}\n\nreturn [{\n  json: {\n    personalInfo: PERSONAL_INFO,\n    masterCourses: masterCourses,\n    bachelorCourses: bachelorCourses,\n    skillsByCategory: skillsByCategory,\n    matchedProjects: projectsWithImpact,\n    unmatchedSkills: unmatchedSkills\n  }\n}];"
+      },
+      "id": "e519697e-cc96-459b-873c-24e77a2bb291",
+      "name": "Combine All Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7168,
+        8048
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/templates/resume_template.html",
+        "options": {}
+      },
+      "id": "48a8ae46-64d7-4262-ab05-f1bee59fb5ba",
+      "name": "Read Template File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        7392,
+        8048
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code uses async to properly read binary data from n8n filesystem mode\nconst data = $('Combine All Data').first().json;\nconst templateFile = $input.first();\n\n// Helper: Generate contact line\nfunction generateContactLine(info) {\n  if (!info) return '';\n  const parts = [];\n  if (info.location) parts.push(info.location);\n  if (info.phone) parts.push(info.phone);\n  if (info.email) parts.push(`<a href=\"mailto:${info.email}\">${info.email}</a>`);\n  if (info.linkedin) parts.push(`<a href=\"${info.linkedin}\">LinkedIn</a>`);\n  if (info.github) parts.push(`<a href=\"${info.github}\">GitHub</a>`);\n  return parts.join(' | ');\n}\n\n// Helper: Generate skills HTML\nfunction generateSkillsSection(skillsByCategory) {\n  if (!skillsByCategory || typeof skillsByCategory !== 'object') {\n    return '<p>No skills data available.</p>';\n  }\n  let html = '';\n  for (const [category, skills] of Object.entries(skillsByCategory)) {\n    if (Array.isArray(skills) && skills.length > 0) {\n      html += `<p class=\"skills-line\"><span class=\"skills-label\">${category}:</span> ${skills.join(', ')}</p>\\n`;\n    }\n  }\n  return html || '<p>No skills data available.</p>';\n}\n\n// Helper: Generate projects HTML\nfunction generateProjectsSection(projects) {\n  if (!Array.isArray(projects) || projects.length === 0) {\n    return '<p>No matching projects found.</p>';\n  }\n  return projects.map(project => {\n    if (!project) return '';\n    const title = project.project_title || project.original_name || 'Untitled Project';\n    const date = project.project_date || '';\n    const bullets = Array.isArray(project.impact_sentences) \n      ? project.impact_sentences.map(s => `<li>${s}</li>`).join('\\n')\n      : '';\n    const dateSpan = date ? `<span class=\"entry-date\">${date}</span>` : '';\n    return `<div class=\"entry\">\\n<div class=\"entry-header\">\\n<span class=\"entry-title\">${title}</span>\\n${dateSpan}\\n</div>\\n<ul>\\n${bullets}\\n</ul>\\n</div>`;\n  }).filter(Boolean).join('\\n');\n}\n\n// Read template using n8n's built-in binary helper (handles filesystem-v2 mode)\nlet template = '';\ntry {\n  // Use getBinaryDataBuffer to properly read binary data from filesystem\n  const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  template = binaryDataBuffer.toString('utf-8');\n} catch (e) {\n  throw new Error('Failed to read template file: ' + e.message);\n}\n\nif (!template || template.trim().length === 0) {\n  throw new Error('Template file is empty');\n}\n\n// Prepare replacement values with null checks\nconst replacements = {\n  '{{NAME}}': data.personalInfo?.name || 'Your Name',\n  '{{CONTACT_LINE}}': generateContactLine(data.personalInfo),\n  '{{MASTER_COURSES}}': Array.isArray(data.masterCourses) && data.masterCourses.length > 0 ? data.masterCourses.join('; ') : 'N/A',\n  '{{BACHELOR_COURSES}}': Array.isArray(data.bachelorCourses) && data.bachelorCourses.length > 0 ? data.bachelorCourses.join('; ') : 'N/A',\n  '{{PROJECTS_SECTION}}': generateProjectsSection(data.matchedProjects),\n  '{{SKILLS_SECTION}}': generateSkillsSection(data.skillsByCategory)\n};\n\n// Replace all placeholders in template\nlet html = template;\nfor (const [placeholder, value] of Object.entries(replacements)) {\n  html = html.replace(new RegExp(placeholder.replace(/[{}]/g, '\\\\$&'), 'g'), value);\n}\n\nconst fileName = (data.personalInfo?.name || 'Resume').replace(/[^a-zA-Z0-9]/g, '_');\n\nreturn [{\n  json: {\n    ...data,\n    resumeHtml: html,\n    fileName: fileName\n  },\n  binary: {\n    resume: await this.helpers.prepareBinaryData(\n      Buffer.from(html, 'utf-8'),\n      `${fileName}_Resume.html`,\n      'text/html; charset=utf-8'\n    )\n  }\n}];"
+      },
+      "id": "e0269d88-381e-4a02-91b2-06cc1690e6fc",
+      "name": "Generate Resume HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7616,
+        8048
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first();\n\nlet htmlContent = '';\n\n// Option 1: Get HTML from upstream Generate Resume HTML node (json.resumeHtml)\nif (input.json.resumeHtml) {\n  htmlContent = input.json.resumeHtml;\n}\n// Option 2: Get HTML from binary data (binary.resume)\nelse if (input.binary && input.binary.resume) {\n  htmlContent = Buffer.from(input.binary.resume.data, 'base64').toString('utf-8');\n}\nelse {\n  throw new Error('No HTML content found from upstream node');\n}\n\n// Fixed page settings for resume\nconst pageSize = 'Letter';\nconst orientation = 'portrait';\n\n// Use fileName from upstream or generate default\nconst fileName = input.json.fileName || `resume_${Date.now()}`;\n\nreturn [{\n  json: {\n    htmlContent: htmlContent,\n    pageSize: pageSize,\n    orientation: orientation,\n    fileName: fileName\n  }\n}];"
+      },
+      "id": "52a27bd2-3dbb-4e8a-ace8-1d562dd34d81",
+      "name": "Process Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7840,
+        8048
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// SIMPLIFIED: Page spacing is now controlled by template file\n// This node only prepares HTML for Gotenberg (requires file named 'index.html')\n\nconst data = $input.first().json;\nconst htmlContent = data.htmlContent;\n\n// No need to inject any styles - template already has @page and .page padding\n// Just pass through the HTML content as-is\nconst finalHtml = htmlContent;\n\nreturn [{\n  json: {\n    htmlContent: finalHtml,\n    pageSize: data.pageSize,\n    orientation: data.orientation,\n    fileName: data.fileName,\n    info: 'Page spacing controlled by template file'\n  },\n  binary: {\n    htmlFile: {\n      data: Buffer.from(finalHtml).toString('base64'),\n      mimeType: 'text/html',\n      fileName: 'index.html'\n    }\n  }\n}];"
+      },
+      "id": "98862e9e-458d-48cd-b842-a7d4cac9e4cb",
+      "name": "Convert to PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8064,
+        8048
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "htmlFile"
+            },
+            {
+              "name": "paperWidth",
+              "value": "8.5"
+            },
+            {
+              "name": "paperHeight",
+              "value": "11"
+            },
+            {
+              "name": "landscape",
+              "value": "false"
+            },
+            {
+              "name": "marginTop",
+              "value": "0"
+            },
+            {
+              "name": "marginBottom",
+              "value": "0"
+            },
+            {
+              "name": "marginLeft",
+              "value": "0"
+            },
+            {
+              "name": "marginRight",
+              "value": "0"
+            },
+            {
+              "name": "printBackground",
+              "value": "true"
+            },
+            {
+              "name": "scale",
+              "value": "1"
+            },
+            {
+              "name": "preferCssPageSize",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "d888e745-b8c4-4ebd-a94c-3ea7772ab151",
+      "name": "Gotenberg PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        8288,
+        8048
+      ],
+      "notesInFlow": true,
+      "notes": "Using Gotenberg (Docker: gotenberg/gotenberg:8). Run: docker run -p 3000:3000 gotenberg/gotenberg:8"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first();\nconst previousData = $('Convert to PDF').first().json;\n\nif (!input.binary) {\n  throw new Error('No binary data received from conversion service');\n}\n\n// Gotenberg returns PDF in 'data' key, not 'htmlFile'\nconst pdfBinary = input.binary.data;\nif (!pdfBinary) {\n  throw new Error('No PDF data found. Available keys: ' + Object.keys(input.binary).join(', '));\n}\n\nconst fileName = previousData.fileName || 'converted';\n\nreturn [{\n  json: {\n    success: true,\n    fileName: `${fileName}.pdf`,\n    pageSize: previousData.pageSize,\n    orientation: previousData.orientation\n  },\n  binary: {\n    pdf: {\n      ...pdfBinary,\n      fileName: `${fileName}.pdf`,\n      mimeType: 'application/pdf'\n    }\n  }\n}];"
+      },
+      "id": "95008bfd-3a60-4570-99a5-93ca50995904",
+      "name": "Rename PDF File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8512,
+        8048
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "c22a9064-67de-479f-b1d3-28efa15a3d76",
+      "name": "Claude - JD Analysis6",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        5296,
+        8208
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "b3fc50ac-f030-4d8c-b9be-0e33f1795c12",
+      "name": "Claude - JD Analysis1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        5872,
+        8752
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "c34c7389-0d27-4e39-a27a-7f4a08113059",
+      "name": "Claude - JD Analysis2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        5296,
+        8752
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "11dce675-44f2-41d7-92ee-81b7af342857",
+      "name": "Claude - JD Analysis3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        6224,
+        8352
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "a4f9fa59-f93f-489a-a448-1dc622f8fdd3",
+      "name": "Claude - JD Analysis4",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        5296,
+        7696
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Analyze JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Analyze JD",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Analyze JD": {
+      "main": [
+        [
+          {
+            "node": "Parse JD Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JD Analysis": {
+      "main": [
+        [
+          {
+            "node": "Read Master Courses File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Bachelor Courses File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Skills File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Project Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Master Courses File": {
+      "main": [
+        [
+          {
+            "node": "Process Master Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Master Courses": {
+      "main": [
+        [
+          {
+            "node": "AI - Extract Master Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Extract Master Courses": {
+      "main": [
+        [
+          {
+            "node": "Parse Master Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Master Courses": {
+      "main": [
+        [
+          {
+            "node": "Merge Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Bachelor Courses File": {
+      "main": [
+        [
+          {
+            "node": "Process Bachelor Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Bachelor Courses": {
+      "main": [
+        [
+          {
+            "node": "AI - Extract Bachelor Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Extract Bachelor Courses": {
+      "main": [
+        [
+          {
+            "node": "Parse Bachelor Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Bachelor Courses": {
+      "main": [
+        [
+          {
+            "node": "Merge Courses",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Read Skills File": {
+      "main": [
+        [
+          {
+            "node": "Process Skills",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Skills": {
+      "main": [
+        [
+          {
+            "node": "AI - Extract Skills",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Extract Skills": {
+      "main": [
+        [
+          {
+            "node": "Parse Skills",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Skills": {
+      "main": [
+        [
+          {
+            "node": "Merge Skills & Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Project Files": {
+      "main": [
+        [
+          {
+            "node": "Process Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Projects": {
+      "main": [
+        [
+          {
+            "node": "AI - Select Top 3 Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Select Top 3 Projects": {
+      "main": [
+        [
+          {
+            "node": "Parse Selected Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Selected Projects": {
+      "main": [
+        [
+          {
+            "node": "AI - Write Impact for Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Write Impact for Project": {
+      "main": [
+        [
+          {
+            "node": "Parse Impact Sentence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Impact Sentence": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Project Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Project Results": {
+      "main": [
+        [
+          {
+            "node": "Merge Skills & Projects",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Courses": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Skills & Projects": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Results": {
+      "main": [
+        [
+          {
+            "node": "Combine All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Data": {
+      "main": [
+        [
+          {
+            "node": "Read Template File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Template File": {
+      "main": [
+        [
+          {
+            "node": "Generate Resume HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Resume HTML": {
+      "main": [
+        [
+          {
+            "node": "Process Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Input": {
+      "main": [
+        [
+          {
+            "node": "Convert to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to PDF": {
+      "main": [
+        [
+          {
+            "node": "Gotenberg PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gotenberg PDF": {
+      "main": [
+        [
+          {
+            "node": "Rename PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Extract Bachelor Courses",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Write Impact for Project",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Select Top 3 Projects",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Extract Skills",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Extract Master Courses",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "1875c354e68add66bfcb88b2f89ad58e5496268bf95948e7520bbb6eb498bbed"
+  }
+}

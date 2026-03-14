@@ -1,0 +1,225 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1fc90766-5806-455b-b4a7-78f88a0b4cfd",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        25040,
+        8928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Test data with different character counts\n// WORKFLOW: 1) Write pure text within character limit  2) Add <b> tags for emphasis\n// Character count = PURE TEXT ONLY (excluding HTML tags like <b></b>)\nconst testProject = {\n  project_title: 'TEST - Character Count',\n  project_date: 'Jan 2024 - Feb 2024',\n  impact_sentences: [\n    // [OPTION 1: 85-95 chars pure text - USE FOR MOST SENTENCES]\n    'Developed <b>churn prediction model</b> using <b>Python</b> and <b>XGBoost</b>, reducing <b>attrition by 25%</b>',\n    // ↑ 85 chars: \"Developed churn prediction model using Python and XGBoost, reducing attrition by 25%\"\n    'Built <b>ETL pipeline</b> processing <b>5M records daily</b> via <b>Airflow</b>, cutting manual work by <b>30 hrs/wk</b>',\n    // ↑ 91 chars: \"Built ETL pipeline processing 5M records daily via Airflow, cutting manual work by 30 hrs/wk\"\n    'Designed <b>sales dashboard</b> in <b>Power BI</b>, enabling real-time insights for <b>50+ managers</b> across APAC',\n    // ↑ 90 chars: \"Designed sales dashboard in Power BI, enabling real-time insights for 50+ managers across APAC\"\n    'Implemented <b>feature store</b> with <b>Feast</b> and <b>Redis</b>, reducing <b>deployment time</b> from 2 weeks to 3 days',\n    // ↑ 93 chars: \"Implemented feature store with Feast and Redis, reducing deployment time from 2 weeks to 3 days\"\n    'Optimized <b>SQL queries</b> for analytics platform, improving <b>report generation speed by 4x</b> (8s to 2s)',\n    // ↑ 86 chars: \"Optimized SQL queries for analytics platform, improving report generation speed by 4x (8s to 2s)\"\n    // [OPTION 2: 190-200 chars pure text - ONLY FOR COMPLEX MULTI-METRIC ACHIEVEMENTS]\n    'Architected <b>ML pipeline</b> for demand forecasting processing <b>100M combinations daily</b> using <b>PySpark</b>, achieving <b>94% accuracy</b>, reducing <b>inventory costs by $2.5M annually</b>, enabling automated ordering for 500 SKUs',\n    // ↑ 196 chars: \"Architected ML pipeline for demand forecasting processing 100M combinations daily using PySpark, achieving 94% accuracy, reducing inventory costs by $2.5M annually, enabling automated ordering for 500 SKUs\"\n    'Led team to build <b>recommendation system</b> using <b>collaborative filtering</b> and <b>deep learning</b>, increasing <b>order value by 18%</b> and <b>engagement by 35%</b>, processing <b>10M users</b> across mobile and web',\n    // ↑ 193 chars: \"Led team to build recommendation system using collaborative filtering and deep learning, increasing order value by 18% and engagement by 35%, processing 10M users across mobile and web\"\n    'Deployed <b>credit scoring model</b> processing <b>50K applications daily</b>, achieving <b>AUC of 0.91</b>, reducing <b>manual review by 60%</b>, enabling instant decisions for <b>85% of applications</b> within 2 seconds',\n    // ↑ 194 chars: \"Deployed credit scoring model processing 50K applications daily, achieving AUC of 0.91, reducing manual review by 60%, enabling instant decisions for 85% of applications within 2 seconds\"\n    'Built <b>segmentation framework</b> using <b>K-means</b> and <b>RFM</b> on <b>10M customers</b>, identifying 8 personas, driving <b>$1.2M revenue</b> through targeted campaigns, improving <b>conversion by 22%</b>',\n    // ↑ 190 chars: \"Built segmentation framework using K-means and RFM on 10M customers, identifying 8 personas, driving $1.2M revenue through targeted campaigns, improving conversion by 22%\"\n  ]\n};\n\nconst PERSONAL_INFO = {\n  name: 'Test User',\n  email: 'test@example.com',\n  phone: '123-456-7890',\n  linkedin: 'https://linkedin.com/in/test',\n  github: 'https://github.com/test',\n  location: 'Test City'\n};\n\nreturn [{\n  json: {\n    personalInfo: PERSONAL_INFO,\n    masterCourses: ['Test Course 1', 'Test Course 2'],\n    bachelorCourses: ['Test Course 3', 'Test Course 4'],\n    skillsByCategory: {\n      'Programming': ['Python', 'JavaScript'],\n      'Tools': ['Git', 'Docker']\n    },\n    matchedProjects: [testProject]\n  }\n}];"
+      },
+      "id": "9cc0e582-ea19-43f9-b3de-651bbd2a2a16",
+      "name": "Generate Test Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        25264,
+        8928
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/templates/resume_test_template.html",
+        "options": {}
+      },
+      "id": "21d1b6ef-0cb1-4127-8c34-af83a235b55b",
+      "name": "Read Template File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        25488,
+        8928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Generate Test Data').first().json;\nconst templateFile = $input.first();\n\nfunction generateContactLine(info) {\n  if (!info) return '';\n  const parts = [];\n  if (info.location) parts.push(info.location);\n  if (info.phone) parts.push(info.phone);\n  if (info.email) parts.push(`<a href=\"mailto:${info.email}\">${info.email}</a>`);\n  if (info.linkedin) parts.push(`<a href=\"${info.linkedin}\">LinkedIn</a>`);\n  if (info.github) parts.push(`<a href=\"${info.github}\">GitHub</a>`);\n  return parts.join(' | ');\n}\n\nfunction generateSkillsSection(skillsByCategory) {\n  if (!skillsByCategory || typeof skillsByCategory !== 'object') {\n    return '<p>No skills data available.</p>';\n  }\n  let html = '';\n  for (const [category, skills] of Object.entries(skillsByCategory)) {\n    if (Array.isArray(skills) && skills.length > 0) {\n      html += `<p class=\"skills-line\"><span class=\"skills-label\">${category}:</span> ${skills.join(', ')}</p>\\n`;\n    }\n  }\n  return html || '<p>No skills data available.</p>';\n}\n\nfunction generateProjectsSection(projects) {\n  if (!Array.isArray(projects) || projects.length === 0) {\n    return '<p>No matching projects found.</p>';\n  }\n  return projects.map(project => {\n    if (!project) return '';\n    const title = project.project_title || 'Untitled Project';\n    const date = project.project_date || '';\n    const bullets = Array.isArray(project.impact_sentences) \n      ? project.impact_sentences.map(s => `<li>${s}</li>`).join('\\n')\n      : '';\n    const dateSpan = date ? `<span class=\"entry-date\">${date}</span>` : '';\n    return `<div class=\"entry\">\\n<div class=\"entry-header\">\\n<span class=\"entry-title\">${title}</span>\\n${dateSpan}\\n</div>\\n<ul>\\n${bullets}\\n</ul>\\n</div>`;\n  }).filter(Boolean).join('\\n');\n}\n\nlet template = '';\ntry {\n  const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  template = binaryDataBuffer.toString('utf-8');\n} catch (e) {\n  throw new Error('Failed to read template file: ' + e.message);\n}\n\nconst replacements = {\n  '{{NAME}}': data.personalInfo?.name || 'Your Name',\n  '{{CONTACT_LINE}}': generateContactLine(data.personalInfo),\n  '{{MASTER_COURSES}}': Array.isArray(data.masterCourses) ? data.masterCourses.join('; ') : 'N/A',\n  '{{BACHELOR_COURSES}}': Array.isArray(data.bachelorCourses) ? data.bachelorCourses.join('; ') : 'N/A',\n  '{{PROJECTS_SECTION}}': generateProjectsSection(data.matchedProjects),\n  '{{SKILLS_SECTION}}': generateSkillsSection(data.skillsByCategory)\n};\n\nlet html = template;\nfor (const [placeholder, value] of Object.entries(replacements)) {\n  html = html.replace(new RegExp(placeholder.replace(/[{}]/g, '\\\\$&'), 'g'), value);\n}\n\nreturn [{\n  json: {\n    resumeHtml: html,\n    fileName: 'Test_Character_Count'\n  },\n  binary: {\n    resume: await this.helpers.prepareBinaryData(\n      Buffer.from(html, 'utf-8'),\n      'Test_Character_Count.html',\n      'text/html; charset=utf-8'\n    )\n  }\n}];"
+      },
+      "id": "aa82093c-d3b2-4e16-b400-e11cfda0c988",
+      "name": "Generate Resume HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        25712,
+        8928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// SIMPLIFIED: Page spacing is now controlled by template file\n// This node only prepares HTML for Gotenberg (requires file named 'index.html')\n\nconst data = $input.first().json;\nconst htmlContent = data.resumeHtml;\n\n// No need to inject any styles - template already has @page and .page padding\n// Just pass through the HTML content as-is\nconst finalHtml = htmlContent;\n\nreturn [{\n  json: {\n    htmlContent: finalHtml,\n    pageSize: 'Letter',\n    orientation: 'portrait',\n    fileName: data.fileName,\n    info: 'Page spacing controlled by template file'\n  },\n  binary: {\n    htmlFile: {\n      data: Buffer.from(finalHtml).toString('base64'),\n      mimeType: 'text/html',\n      fileName: 'index.html'\n    }\n  }\n}];"
+      },
+      "id": "814dab38-9e27-47a2-bdfb-9d5b2163a874",
+      "name": "Convert to PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        25920,
+        8928
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "htmlFile"
+            },
+            {
+              "name": "paperWidth",
+              "value": "8.5"
+            },
+            {
+              "name": "paperHeight",
+              "value": "11"
+            },
+            {
+              "name": "marginTop",
+              "value": "0"
+            },
+            {
+              "name": "marginBottom",
+              "value": "0"
+            },
+            {
+              "name": "marginLeft",
+              "value": "0"
+            },
+            {
+              "name": "marginRight",
+              "value": "0"
+            },
+            {
+              "name": "landscape",
+              "value": "false"
+            },
+            {
+              "name": "printBackground",
+              "value": "true"
+            },
+            {
+              "name": "scale",
+              "value": "1"
+            },
+            {
+              "name": "preferCssPageSize",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "816fc808-d808-439e-b918-e0d8bb543e22",
+      "name": "Gotenberg PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        26144,
+        8928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first();\nconst previousData = $('Convert to PDF').first().json;\n\n// DEBUG: Log margin settings used\nconsole.log('=== DEBUG: Gotenberg Parameters Used ===');\nconsole.log('Paper: 8.5 x 11 inches (Letter)');\nconsole.log('Margins: top=0, bottom=0, left=0, right=0');\nconsole.log('preferCssPageSize: true');\nconsole.log('');\nconsole.log('=== DEBUG: CSS Analysis from Convert to PDF ===');\nconsole.log('Template had @page rule:', previousData.debug?.templateHasPageRule);\nconsole.log('Template margin rules:', previousData.debug?.templateMarginCount);\nconsole.log('Template padding rules:', previousData.debug?.templatePaddingCount);\nconsole.log('');\nconsole.log('=== DEBUG: Margin values that may cause spacing ===');\n(previousData.debug?.marginValues || []).forEach((m, i) => console.log(`  ${i+1}. ${m}`));\nconsole.log('');\nconsole.log('=== DEBUG: Padding values that may cause spacing ===');\n(previousData.debug?.paddingValues || []).forEach((p, i) => console.log(`  ${i+1}. ${p}`));\nconsole.log('');\nconsole.log('=== DEBUG: Container/Page/Body styles ===');\nconsole.log('.resume-container:', previousData.debug?.containerStyles);\nconsole.log('.resume-page:', previousData.debug?.pageStyles);\nconsole.log('body:', previousData.debug?.bodyStyles);\nconsole.log('');\nconsole.log('=== DEBUG: Elements with inch-based padding (LIKELY CAUSE OF SPACING) ===');\n(previousData.debug?.inchPaddingRules || []).forEach((rule, i) => {\n  console.log(`${i+1}. ${rule.substring(0, 150)}...`);\n});\n\nif (!input.binary) {\n  throw new Error('No binary data received');\n}\n\nconst pdfBinary = input.binary.data;\nif (!pdfBinary) {\n  throw new Error('No PDF data found');\n}\n\nreturn [{\n  json: {\n    success: true,\n    fileName: 'Test_Character_Count.pdf',\n    marginDebug: {\n      gotenbergMargins: { top: 0, bottom: 0, left: 0, right: 0 },\n      preferCssPageSize: true,\n      templateHadPageRule: previousData.debug?.templateHasPageRule,\n      marginValuesInTemplate: previousData.debug?.marginValues,\n      paddingValuesInTemplate: previousData.debug?.paddingValues,\n      containerStyles: previousData.debug?.containerStyles,\n      pageStyles: previousData.debug?.pageStyles,\n      bodyStyles: previousData.debug?.bodyStyles,\n      inchPaddingRules: previousData.debug?.inchPaddingRules\n    }\n  },\n  binary: {\n    pdf: {\n      ...pdfBinary,\n      fileName: 'Test_Character_Count.pdf',\n      mimeType: 'application/pdf'\n    }\n  }\n}];"
+      },
+      "id": "e46d82d1-c058-4549-8c0c-4df0fcab5213",
+      "name": "Rename PDF File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        26368,
+        8928
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Test Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Test Data": {
+      "main": [
+        [
+          {
+            "node": "Read Template File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Template File": {
+      "main": [
+        [
+          {
+            "node": "Generate Resume HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Resume HTML": {
+      "main": [
+        [
+          {
+            "node": "Convert to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to PDF": {
+      "main": [
+        [
+          {
+            "node": "Gotenberg PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gotenberg PDF": {
+      "main": [
+        [
+          {
+            "node": "Rename PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "1875c354e68add66bfcb88b2f89ad58e5496268bf95948e7520bbb6eb498bbed"
+  }
+}

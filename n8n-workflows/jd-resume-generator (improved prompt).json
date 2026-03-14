@@ -1,0 +1,2919 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Select courses that provide the strongest FOUNDATIONAL knowledge for the target job skills.\n\n<target_skills>\n{{ JSON.stringify($json.jdAnalysis.top_5_skills?.map(s => s.skill) || []) }}\n</target_skills>\n\n<available_courses>\n{{ $json.masterCoursesContent }}\n</available_courses>\n\n<rules>\n1. Select exactly 3 courses with strongest FOUNDATIONAL relevance to the target skills\n2. Courses do NOT need to be exact tool matches. For example: Machine Learning supports a data science role even if the JD asks for specific tools\n3. Prioritize: statistics, ML, data mining, quantitative methods, risk modeling, and any applied/computational courses\n4. You MUST always return exactly 3 courses. NEVER return an empty array\n5. Return EXACT course names as listed\n</rules>\n\nReturn ONLY valid JSON: {\"selected_courses\": [\"Machine Learning\", \"Data Mining\"]}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "504f1be0-1ed6-4c1f-ba2d-066149cf66f9",
+      "name": "AI - Extract Master Courses",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        45664,
+        32560
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        44416,
+        33312
+      ],
+      "id": "5fecba8f-6941-482f-bff6-4ddb8d20af97",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 4000,
+          "temperature": 0.2
+        }
+      },
+      "id": "4ae0b146-005a-4b1b-b069-349c9cc6f85f",
+      "name": "Claude - JD Analysis4",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        45736,
+        32784
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.3
+        }
+      },
+      "id": "99d609fd-d1c2-4e68-8815-f50b0f2fe8a6",
+      "name": "Claude - JD Analysis3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        47912,
+        33652
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.3
+        }
+      },
+      "id": "05f9c519-ec73-4d15-93e0-165554ff54da",
+      "name": "Claude - JD Analysis2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        45736,
+        35500
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 4000,
+          "temperature": 0.2
+        }
+      },
+      "id": "891925a9-7103-4cea-b5f3-e97db21c0923",
+      "name": "Claude - JD Analysis6",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        45736,
+        33288
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Combine All Data').first().json;\nconst templateFile = $input.first();\n\nfunction generateContactLine(info) {\n  if (!info) return '';\n  const parts = [];\n  if (info.location) parts.push(info.location);\n  if (info.phone) parts.push(info.phone);\n  if (info.email) parts.push(`<a href=\"mailto:${info.email}\">${info.email}</a>`);\n  if (info.linkedin) parts.push(`<a href=\"${info.linkedin}\">LinkedIn</a>`);\n  if (info.github) parts.push(`<a href=\"${info.github}\">GitHub</a>`);\n  return parts.join(' | ');\n}\n\nfunction generateSkillsSection(skillsByCategory) {\n  if (!skillsByCategory || typeof skillsByCategory !== 'object') {\n    return '<p>No skills data available.</p>';\n  }\n  let html = '';\n  for (const [category, skills] of Object.entries(skillsByCategory)) {\n    if (Array.isArray(skills) && skills.length > 0) {\n      html += `<p class=\"skills-line\"><span class=\"skills-label\">${category}:</span> ${skills.join(', ')}</p>\\n`;\n    }\n  }\n  return html || '<p>No skills data available.</p>';\n}\n\nfunction generateProjectsSection(projects) {\n  if (!Array.isArray(projects) || projects.length === 0) {\n    return '<p>No matching projects found.</p>';\n  }\n  return projects.map(project => {\n    if (!project) return '';\n    const title = project.project_title || project.original_name || 'Untitled Project';\n    const date = project.project_date || '';\n    const url = project.project_url || '';\n    const bullets = Array.isArray(project.impact_sentences) \n      ? project.impact_sentences.map(s => `<li>${s}</li>`).join('\\n')\n      : '';\n    const dateSpan = date ? `<span class=\"entry-date\">${date}</span>` : '';\n    const titleHtml = url ? `<a href=\"${url}\" class=\"entry-title\" target=\"_blank\">${title}</a>` : `<span class=\"entry-title\">${title}</span>`;\n    return `<div class=\"entry\">\\n<div class=\"entry-header\">\\n${titleHtml}\\n${dateSpan}\\n</div>\\n<ul>\\n${bullets}\\n</ul>\\n</div>`;\n  }).filter(Boolean).join('\\n');\n}\n\nlet template = '';\ntry {\n  const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  template = binaryDataBuffer.toString('utf-8');\n} catch (e) {\n  throw new Error('Failed to read template file: ' + e.message);\n}\n\nif (!template || template.trim().length === 0) {\n  throw new Error('Template file is empty');\n}\n\nconst replacements = {\n  '{{NAME}}': data.personalInfo?.name || 'Your Name',\n  '{{CONTACT_LINE}}': generateContactLine(data.personalInfo),\n  '{{MASTER_COURSES}}': Array.isArray(data.masterCourses) && data.masterCourses.length > 0 ? data.masterCourses.join('; ') : 'N/A',\n  '{{BACHELOR_COURSES}}': Array.isArray(data.bachelorCourses) && data.bachelorCourses.length > 0 ? data.bachelorCourses.join('; ') : 'N/A',\n  '{{PROJECTS_SECTION}}': generateProjectsSection(data.matchedProjects),\n  '{{SKILLS_SECTION}}': generateSkillsSection(data.skillsByCategory)\n};\n\nlet html = template;\nfor (const [placeholder, value] of Object.entries(replacements)) {\n  html = html.replace(new RegExp(placeholder.replace(/[{}]/g, '\\\\$&'), 'g'), value);\n}\n\nconst fileName = (data.personalInfo?.name || 'Resume').replace(/[^a-zA-Z0-9]/g, '_');\n\nreturn [{\n  json: {\n    ...data,\n    resumeHtml: html,\n    fileName: fileName\n  },\n  binary: {\n    resume: await this.helpers.prepareBinaryData(\n      Buffer.from(html, 'utf-8'),\n      `${fileName}_Resume.html`,\n      'text/html; charset=utf-8'\n    )\n  }\n}];"
+      },
+      "id": "65437d81-ee51-4a87-898b-337a2228f8fa",
+      "name": "Generate Resume HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        50592,
+        34216
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/templates/resume_template.html",
+        "options": {}
+      },
+      "id": "80040054-264e-41ff-89c5-d7d8aedfadbb",
+      "name": "Read Template File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        50368,
+        34216
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst PERSONAL_INFO = {\n  name: 'Your Name',\n  email: 'sam.guan@example.com',\n  phone: '(123) 456-7890',\n  linkedin: 'https://linkedin.com/in/samguan',\n  github: 'https://github.com/samguan',\n  location: 'San Francisco, CA'\n};\n\nlet masterCourses = [];\nlet bachelorCourses = [];\nlet skillsByCategory = {};\nlet projectsWithImpact = [];\nlet unmatchedSkills = [];\n\nfor (const item of items) {\n  const data = item.json;\n  if (data.masterCourses) masterCourses = data.masterCourses;\n  if (data.bachelorCourses) bachelorCourses = data.bachelorCourses;\n  if (data.skillsByCategory) skillsByCategory = data.skillsByCategory;\n  if (data.projectsWithImpact) projectsWithImpact = data.projectsWithImpact;\n  if (data.unmatchedSkills) unmatchedSkills = data.unmatchedSkills;\n}\n\n// Include JD analysis for downstream use by Cover Letter Generator\nconst jdAnalysisData = $('Parse JD Analysis').first().json;\n\nreturn [{\n  json: {\n    personalInfo: PERSONAL_INFO,\n    masterCourses: masterCourses,\n    bachelorCourses: bachelorCourses,\n    skillsByCategory: skillsByCategory,\n    matchedProjects: projectsWithImpact,\n    unmatchedSkills: unmatchedSkills,\n    jdAnalysis: jdAnalysisData.jdAnalysis || {},\n    jobDescription: jdAnalysisData.jobDescription || ''\n  }\n}];"
+      },
+      "id": "ffb5d79e-1ae9-4d10-9504-363e8d4d9bcd",
+      "name": "Combine All Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        50144,
+        34216
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "681b5a74-fe34-4ebb-bdae-a731551f8bc5",
+      "name": "Merge All Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        49920,
+        34216
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "4c971656-b13d-4cfa-87f3-8c36ff94bdd5",
+      "name": "Merge Skills & Projects",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        49696,
+        34692
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "52a5d9dc-daad-4d88-90a6-4e29e3c799e8",
+      "name": "Merge Courses",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        46240,
+        32864
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume project selector. You match a candidate's past projects to a job description's business needs and output structured JSON only.\n</role>\n\n<business_context>\nGoal: {{ $json.jdAnalysis.business_goal }}\nTop 5 Skills: {{ JSON.stringify($json.top5Skills) }}\nNote: Top 5 Skills is a JSON array of strings, e.g. [\"Skill_A\", \"Skill_B\", \"Skill_C\"].\n</business_context>\n\n<available_projects>\n{{ $json.projectsContent }}\n</available_projects>\n\n<input_validation>\nBefore proceeding, check ALL of the following:\n- Goal is empty or contains unrendered template placeholders (e.g. dollar-sign variable references).\n- Top 5 Skills is empty or contains the literal text \"JSON.stringify\" instead of an actual array.\n- available_projects is empty or contains no [FILE: ...] markers.\n\nIf ANY check fails, return ONLY:\n{\"error\": \"Missing input data\", \"failed_fields\": [\"Goal\", \"Top 5 Skills\"]}\nList every failed field. Do NOT output any other fields. Do NOT proceed with selection.\n\nIf ALL checks pass, proceed and output the success format defined in <output_format>. Never mix the two formats.\n</input_validation>\n\n<selection_rules>\nSelect exactly 3 projects from <available_projects>. NEVER invent or fabricate projects not present in available_projects.\n\nPriorities IN ORDER â€” earlier rules override later ones:\n\n1. RELEVANCE (highest): Choose projects that most directly address the business Goal.\n2. SKILL COVERAGE: The 3 projects combined should cover as many Top 5 Skills as possible. Aim for all 5; 4 is acceptable; below 4 is permitted only if no better combination exists.\n3. RECENTNESS (tiebreaker only): Among equally relevant projects, favor more recent ones.\n\nBoundary cases:\n- Fewer than 3 projects available â†’ return all available projects.\n- A selected project matches zero Top 5 Skills â†’ set its matched_skills to an empty array [].\n- No project matches ANY Top 5 Skill â†’ select the 3 most thematically relevant to Goal and add \"low_confidence\": true to each object.\n</selection_rules>\n\n<file_name_extraction>\nEach project starts with a [FILE: xxx] marker. Extract file_name from this marker character-for-character.\n\nâœ“ Correct:\n  Marker: [FILE: car-price-regression] â†’ file_name: \"car-price-regression\"\n\nâœ— Wrong (never do these):\n  \"Car Price Regression\" â€” translated/reformatted\n  \"car_price_regression\" â€” changed punctuation\n  \"pricing-optimization-project\" â€” invented from content\n</file_name_extraction>\n\n<output_format>\nReturn ONLY a valid JSON object. No markdown fences, no explanation, no text outside the JSON.\n\nSchema:\n{\n  \"selected_projects\": [\n    {\n      \"file_name\": \"<exact string from [FILE: xxx] marker>\",\n      \"matched_skills\": [\"<Skill from Top 5>\", \"<Skill from Top 5>\"],\n      \"relevance_reason\": \"<max 20 words: why this project addresses the Goal>\"\n    }\n  ]\n}\n\nField rules:\n- selected_projects: exactly 3 objects (fewer only if fewer than 3 projects exist). Index 0 = best match.\n- file_name: see <file_name_extraction>.\n- matched_skills: JSON array of strings. Each string must be copied verbatim from the Top 5 Skills array. Include ALL Top 5 Skills this project demonstrates. Use [] if the project matches none.\n- relevance_reason: one sentence, max 20 words.\n- low_confidence: omit by default. Add \"low_confidence\": true ONLY when the no-match fallback in <selection_rules> is triggered.\n</output_format>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "49a4529d-c00c-48f4-b79a-61b7c1d1147b",
+      "name": "AI - Select Top 3 Projects",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        45664,
+        35276
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const previousData = $('Parse JD Analysis').first().json;\nconst items = $input.all();\n\nlet projectsContent = '';\nconst projectsMap = {};\nconst projectUrlsMap = {};\nconst debugInfo = [];\n\ntry {\n  for (let i = 0; i < items.length; i++) {\n    const item = items[i];\n    try {\n      const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, 'data');\n      const content = binaryDataBuffer.toString('utf-8');\n      \n      const fileName = item.binary?.data?.fileName || '';\n      const cleanName = fileName.replace(/\\.md$/i, '').replace(/^.*[\\\\\\/]/, '');\n      \n      const urlMatch = content.match(/^URL:\\s*(.+)$/m);\n      const projectUrl = urlMatch ? urlMatch[1].trim() : '';\n      \n      projectsContent += `[FILE: ${cleanName}]\\n${content}\\n\\n`;\n      \n      debugInfo.push({\n        originalFileName: fileName,\n        cleanName: cleanName,\n        contentLength: content.length,\n        firstLine: content.split('\\n')[0],\n        secondLine: content.split('\\n')[1] || 'NO SECOND LINE'\n      });\n      \n      if (cleanName) {\n        projectsMap[cleanName] = content;\n        projectUrlsMap[cleanName] = projectUrl;\n      }\n    } catch (e) {\n      debugInfo.push({ error: e.message, index: i });\n    }\n  }\n} catch (error) {\n  projectsContent = '';\n}\n\nreturn [{\n  json: {\n    ...previousData,\n    projectsContent: projectsContent,\n    projectsMap: projectsMap,\n    projectUrlsMap: projectUrlsMap,\n    branch: 'projects',\n    debugProcessProjects: {\n      filesProcessed: debugInfo,\n      mapKeys: Object.keys(projectsMap),\n      totalFiles: items.length\n    }\n  }\n}];"
+      },
+      "id": "9ff2d721-1047-4177-9024-4d1694cf63b4",
+      "name": "Process Projects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        45440,
+        35276
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/relevant_project/*.md",
+        "options": {}
+      },
+      "id": "c6a58714-c84b-48ac-a295-243fd219c126",
+      "name": "Read Project Files",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        45216,
+        35276
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 4000,
+          "temperature": 0.2
+        }
+      },
+      "id": "3a829188-faf8-447b-9ebe-8e95cbb001e3",
+      "name": "Claude - Skills Shortener",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        49416,
+        33432
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// Final output - extract skillsByCategory from skillsData\nreturn [{\n  json: {\n    skillsByCategory: input.skillsData?.skills_by_category || {},\n    branch: 'skills'\n  }\n}];"
+      },
+      "id": "e3bcdbf3-babc-43ac-aff3-48a2588359e1",
+      "name": "Finalize Skills",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        49408,
+        33612
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst content = input.output || input.text || '';\n\n// Get iteration from the Check Skills Loop node\nconst checkLoopData = $('Check Skills Loop').first().json;\nconst iteration = checkLoopData.iteration || 1;\n\nlet skillsData;\nlet jsonStr = content;\n\nif (content.includes('```json')) {\n  const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else if (content.includes('```')) {\n  const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) jsonStr = jsonMatch[0];\n}\n\ntry {\n  skillsData = JSON.parse(jsonStr.trim());\n} catch (e) {\n  throw new Error('Failed to parse shortened skills: ' + e.message);\n}\n\nreturn [{\n  json: {\n    skillsData: skillsData,\n    iteration: iteration,\n    branch: 'skills'\n  }\n}];"
+      },
+      "id": "899bc3f8-2c83-4ce5-804f-83eba0a5bae2",
+      "name": "Parse Shortened Skills",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        49696,
+        33532
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=AGGRESSIVELY shorten each skill category line to under 86 characters.\n\n<categories_too_long>\n{{ JSON.stringify($json.tooLongCategories) }}\n</categories_too_long>\n\n<valid_categories>\n{{ JSON.stringify($json.validCategories) }}\n</valid_categories>\n\n<CRITICAL_REQUIREMENT>\nEach line when rendered as \"Category: skill1, skill2, skill3\" must be UNDER 86 characters.\nYou must CUT aggressively. Be RUTHLESS.\n</CRITICAL_REQUIREMENT>\n\n<shortening_rules>\n1. SHORTEN category names: \"Data Analysis & Programming\" â†’ \"Programming\"\n2. REMOVE ALL parenthetical details: \"Python (NumPy, Pandas)\" â†’ \"Python\"\n3. USE abbreviations: \"PostgreSQL\" â†’ \"Postgres\", \"JavaScript\" â†’ \"JS\"\n4. REMOVE lowest-priority skills (keep only top 3-4 per category)\n5. COMBINE similar items: \"MySQL\", \"PostgreSQL\" â†’ \"SQL (MySQL, Postgres)\"\n\n<examples>\nBEFORE (128 chars): \"Data Analysis & Programming: Python (NumPy, Pandas, scikit-learn), SQL (MySQL, complex queries), R (statistical modeling)\"\nAFTER (52 chars): \"Programming: Python, SQL, R, Machine Learning\"\n\nBEFORE (95 chars): \"Analytics Tools & Platforms: Power BI (visualization), Looker, Snowflake, Amplitude, DBT\"\nAFTER (50 chars): \"Analytics: Power BI, Looker, Snowflake, DBT\"\n</examples>\n\nReturn ONLY valid JSON with ALL categories (both fixed and already-valid ones):\n{\"skills_by_category\": {\"Programming\": [\"Python\", \"SQL\", \"R\"], \"Tools\": [\"Power BI\", \"Looker\"]}}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "3824a852-af50-4290-889b-2780f3c5195b",
+      "name": "AI - Shorten Skills Lines",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        49344,
+        33208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-skills-continue",
+              "leftValue": "={{ $json.shouldContinue }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5acfcaba-4a4a-4312-a5cd-cb9aa0c2d82c",
+      "name": "Check Skills Loop",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        49120,
+        33460
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nlet skillsData = input.skillsData;\n\n// If coming from AI - Shorten Skills Lines, parse the response\nif (input.output || input.text) {\n  const content = input.output || input.text || '';\n  let jsonStr = content;\n  \n  if (content.includes('```json')) {\n    const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n    if (match) jsonStr = match[1];\n  } else if (content.includes('```')) {\n    const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n    if (match) jsonStr = match[1];\n  } else {\n    const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) jsonStr = jsonMatch[0];\n  }\n  \n  try {\n    skillsData = JSON.parse(jsonStr.trim());\n  } catch (e) {\n    // Keep existing skillsData if parse fails\n  }\n}\n\nconst MAX_CHARS = 86;\nconst iteration = (input.iteration || 0) + 1;\n\n// ========== Code-based pre-trimming (first iteration only) ==========\nconst abbr = { 'PostgreSQL': 'Postgres', 'JavaScript': 'JS', 'TypeScript': 'TS' };\nconst catShort = {\n  'Data Analysis & Programming': 'Programming',\n  'Analytics Tools & Platforms': 'Analytics',\n  'Machine Learning & AI': 'ML & AI',\n  'Database Management': 'Databases',\n  'Cloud & Infrastructure': 'Cloud',\n  'Data Engineering & Processing': 'Data Engineering',\n};\n\nfunction lineLen(cat, skills) { return `${cat}: ${skills.join(', ')}`.length; }\nfunction rmParens(s) { return s.replace(/\\s*\\([^)]*\\)/g, '').trim(); }\nfunction doAbbr(s) { let r = s; for (const [f, a] of Object.entries(abbr)) r = r.replace(f, a); return r; }\n\nif (iteration === 1) {\n  const refined = {};\n  for (const [origCat, origSkills] of Object.entries(skillsData.skills_by_category || {})) {\n    if (!Array.isArray(origSkills)) continue;\n    let cat = origCat;\n    let skills = [...origSkills];\n    \n    if (lineLen(cat, skills) > MAX_CHARS) {\n      skills = skills.map(rmParens);\n      if (lineLen(cat, skills) > MAX_CHARS) cat = catShort[cat] || cat;\n      if (lineLen(cat, skills) > MAX_CHARS) skills = skills.map(doAbbr);\n      while (skills.length > 3 && lineLen(cat, skills) > MAX_CHARS) skills.pop();\n    }\n    refined[cat] = skills;\n  }\n  skillsData = { skills_by_category: refined };\n}\n\n// ========== Validation ==========\nfunction getRenderedLineLength(category, skills) {\n  return `${category}: ${skills.join(', ')}`.length;\n}\n\nconst skillsByCategory = skillsData.skills_by_category || {};\nconst tooLongCategories = [];\nconst validCategories = {};\n\nfor (const [category, skills] of Object.entries(skillsByCategory)) {\n  if (!Array.isArray(skills)) continue;\n  \n  const lineLength = getRenderedLineLength(category, skills);\n  if (lineLength > MAX_CHARS) {\n    tooLongCategories.push({\n      category: category,\n      skills: skills,\n      currentChars: lineLength,\n      needToRemove: lineLength - MAX_CHARS\n    });\n  } else {\n    validCategories[category] = skills;\n  }\n}\n\nconst allValid = tooLongCategories.length === 0;\nconst maxIterations = 5;\nconst shouldContinue = !allValid && iteration < maxIterations;\n\nreturn [{\n  json: {\n    skillsData: skillsData,\n    tooLongCategories: tooLongCategories,\n    validCategories: validCategories,\n    allValid: allValid,\n    iteration: iteration,\n    shouldContinue: shouldContinue,\n    branch: 'skills'\n  }\n}];"
+      },
+      "id": "92d507e9-fa55-4b4a-9029-5f86d3aad304",
+      "name": "Validate Skills Char Count",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48832,
+        33532
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nlet skillsData;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    skillsData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  skillsData = { skills_by_category: {} };\n}\n\nconst previousData = $('Process Skills').first().json;\n\nreturn [{\n  json: {\n    ...previousData,\n    rawSkillsByCategory: skillsData.skills_by_category || {},\n    branch: 'skills'\n  }\n}];"
+      },
+      "id": "97a77787-a86d-498b-8270-4370a03c1ecd",
+      "name": "Parse Generated Skills",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48256,
+        33532
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a high-impact Skills section by aligning the user's REAL skills with JD requirements.\n\n<jd_analysis>\n{{ JSON.stringify($json.jdAnalysis) }}\n</jd_analysis>\n\n<user_skills>\n{{ $json.skillsContent }}\n</user_skills>\n\n<HONESTY_RULE - HIGHEST PRIORITY>\nONLY include tools/skills the user actually has (listed in user_skills).\nNEVER add tools just because the JD mentions them.\nNEVER use \"Familiar with [Tool]\" for tools not in user_skills.\n\nFORBIDDEN: Adding \"Alteryx\" because JD mentions it but user doesn't have it.\nFORBIDDEN: Adding \"Bloomberg Terminal\" because JD mentions it but user never used it.\nALLOWED: If user has \"MySQL\" and JD says \"SQL\", list as \"SQL (MySQL)\" â€” this is terminology alignment, not fabrication.\n</HONESTY_RULE>\n\n<logic_rules>\n1. TERMINOLOGY ALIGNMENT: Use JD phrasing for skills the user genuinely has.\n   - User has \"Matplotlib\" + JD says \"Data Visualization\" â†’ \"Data Visualization (Matplotlib)\"\n   - User has \"pandas\" + JD says \"data cleaning\" â†’ \"Data Cleaning & Transformation (pandas)\"\n2. HIERARCHY: Sort categories by relevance to JD â€” most important category first.\n3. LIMITS: Max 4 categories. Max 6 items per category. Total under 20 items.\n4. PRIORITIZE: Essential JD skills that user actually has should appear first.\n5. CHARACTER LIMIT: Each rendered line \"Category: skill1, skill2, skill3\" should aim to be under 86 characters. Keep category names short (e.g., \"Programming\" not \"Data Analysis & Programming\"). Avoid long parenthetical details.\n</logic_rules>\n\nReturn ONLY valid JSON (no markdown fences):\n{\"skills_by_category\": {\"Programming\": [\"Python (Pandas, NumPy)\", \"SQL (MySQL)\", \"R\"], \"Analytics\": [\"Data Visualization (Matplotlib)\", \"Statistical Modeling\"]}}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "1f95e9f1-497a-427e-b741-29611d4c07c6",
+      "name": "AI - Generate Skills (Step 1)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        47840,
+        33428
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const previousData = $('Parse JD Analysis').first().json;\n\nlet skillsContent = '';\ntry {\n  // Use n8n's built-in helper to read binary data (handles filesystem-v2 mode)\n  const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  skillsContent = binaryDataBuffer.toString('utf-8');\n} catch (e) {\n  skillsContent = '';\n}\n\nreturn [{\n  json: {\n    ...previousData,\n    skillsContent: skillsContent,\n    branch: 'skills'\n  }\n}];"
+      },
+      "id": "de95589e-5351-4e88-a6a1-2aea2167fde6",
+      "name": "Process Skills",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47616,
+        33532
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/relevant_skills.md",
+        "options": {}
+      },
+      "id": "95b3ac9c-6ab8-495a-aded-3057f076c536",
+      "name": "Read Skills File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        47392,
+        33532
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nlet coursesData;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    coursesData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  coursesData = { selected_courses: [] };\n}\n\nreturn [{\n  json: {\n    bachelorCourses: coursesData.selected_courses || [],\n    branch: 'bachelor_courses'\n  }\n}];"
+      },
+      "id": "7493ca9b-9dd4-4b03-98d1-f5ba12aac37b",
+      "name": "Parse Bachelor Courses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        46016,
+        33064
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Select courses that provide the strongest FOUNDATIONAL knowledge for the target job skills.\n\n<target_skills>\n{{ JSON.stringify($json.jdAnalysis.top_5_skills?.map(s => s.skill) || []) }}\n</target_skills>\n\n<available_courses>\n{{ $json.bachelorCoursesContent }}\n</available_courses>\n\n<rules>\n1. Select exactly 4 courses with strongest FOUNDATIONAL relevance to the target skills\n2. Courses do NOT need to be exact tool matches. For example: Mathematical Statistics supports data analysis roles even if the JD asks for Python or SQL\n3. Prioritize: statistics, math modeling, algorithms, data structures, quantitative methods, and any applied/computational courses\n4. You MUST always return at exactly 4 courses. NEVER return an empty array\n5. Return EXACT course names as listed\n</rules>\n\nReturn ONLY valid JSON: {\"selected_courses\": [\"Statistics\", \"Linear Algebra\"]}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "fd0db15c-f8a6-4cde-9c9c-01dcb452ec38",
+      "name": "AI - Extract Bachelor Courses",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        45664,
+        33064
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const previousData = $('Parse JD Analysis').first().json;\n\nlet bachelorCoursesContent = '';\ntry {\n  // Use n8n's built-in helper to read binary data (handles filesystem-v2 mode)\n  const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  bachelorCoursesContent = binaryDataBuffer.toString('utf-8');\n} catch (e) {\n  bachelorCoursesContent = '';\n}\n\nreturn [{\n  json: {\n    ...previousData,\n    bachelorCoursesContent: bachelorCoursesContent,\n    branch: 'bachelor_courses'\n  }\n}];"
+      },
+      "id": "c889d30c-60f3-4654-93eb-e1da0d48301a",
+      "name": "Process Bachelor Courses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        45440,
+        33064
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/edu_bech_course.md",
+        "options": {}
+      },
+      "id": "f5bde6cb-2f7e-449e-a0c2-222d9d481e48",
+      "name": "Read Bachelor Courses File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        45216,
+        33064
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nlet coursesData;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    coursesData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  coursesData = { selected_courses: [] };\n}\n\nreturn [{\n  json: {\n    masterCourses: coursesData.selected_courses || [],\n    branch: 'master_courses'\n  }\n}];"
+      },
+      "id": "07ff0a45-a1b6-4cef-ac32-f45489396072",
+      "name": "Parse Master Courses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        46016,
+        32664
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const previousData = $('Parse JD Analysis').first().json;\n\nlet masterCoursesContent = '';\ntry {\n  // Use n8n's built-in helper to read binary data (handles filesystem-v2 mode)\n  const binaryDataBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  masterCoursesContent = binaryDataBuffer.toString('utf-8');\n} catch (e) {\n  masterCoursesContent = '';\n}\n\nreturn [{\n  json: {\n    ...previousData,\n    masterCoursesContent: masterCoursesContent,\n    branch: 'master_courses'\n  }\n}];"
+      },
+      "id": "18cfe54f-b583-4aaf-849f-8ee46ef250bc",
+      "name": "Process Master Courses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        45440,
+        32664
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/edu_master_course.md",
+        "options": {}
+      },
+      "id": "ad1db7c1-af7c-4a3d-be5b-709dfbf96ece",
+      "name": "Read Master Courses File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        45216,
+        32664
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nlet jdAnalysis;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    jdAnalysis = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  jdAnalysis = {\n    company_name: 'Unknown Company',\n    job_title: 'Unknown',\n    location: '',\n    core_mission: '',\n    top_5_skills: [],\n    inferred_pain_points: '',\n    tone_and_style: 'Professional',\n    value_proposition: '',\n    business_goal: '',\n    success_metrics: [],\n    seniority_level: 'junior',\n    ats_keywords: [],\n    error: e.message\n  };\n}\n\nconst triggerData = $('When Executed by Another Workflow').first().json;\nconst originalJD = triggerData['Job Description'] || '';\n\nreturn [{\n  json: {\n    jobDescription: originalJD,\n    jdAnalysis: jdAnalysis,\n    top3Skills: jdAnalysis.top_5_skills?.slice(0, 3) || [],\n    top5Skills: jdAnalysis.top_5_skills || []\n  }\n}];"
+      },
+      "id": "3c735e5d-a695-4cec-b25c-2e1c448a0675",
+      "name": "Parse JD Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        44992,
+        33312
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this job description to extract key requirements, business context, and strategic insights.\n\n<job_description>\n{{ $json['Job Description'] }}\n</job_description>\n\n<rules>\n1. IDENTIFY: Top 5 skills ranked by importance. Prefer actionable technical/domain skills over generic soft skills. Use the JD's own phrasing where possible.\n   BAD: \"Critical thinking and problem-solving\" — too generic, cannot be shown in a resume bullet.\n   GOOD: \"Process mapping and workflow documentation\" — specific and demonstrable.\n2. INFER: Primary business goal and core mission of this role.\n3. EXTRACT: Success metric keywords (e.g., \"scalability\", \"accuracy\", \"efficiency\").\n4. CATEGORIZE each skill as essential (explicitly required) or complementary (nice-to-have).\n5. DETECT seniority level: \"intern\", \"junior\" (0-2yr), \"mid\" (3-5yr), \"senior\" (5+yr).\n6. EXTRACT 10-15 ATS keywords VERBATIM from the JD. Copy exact phrases as they appear. Do NOT paraphrase or generalize.\n   GOOD: JD says \"test and compare AI tools\" → \"test and compare AI tools\"\n   BAD: JD says \"test and compare AI tools\" → \"AI tool evaluation\" (paraphrased)\n7. EXTRACT key_responsibilities: Copy each responsibility bullet from the JD's contribution/responsibilities section verbatim.\n8. INFER: Hidden pain points as a JSON array of short strings.\n9. ASSESS: Tone and style of the posting (e.g., Professional/Rigorous or Bold/Innovative).\n10. DETERMINE: The #1 value proposition they seek in a candidate.\n11. CLASSIFY tech_level — how much does this role value technical implementation vs business outcomes?\n   \"low\": Non-tech company OR JD focuses on business outcomes, process improvement, stakeholder management. Tech is means, not goal. (e.g., AI Intern at finance firm, Data Analyst at insurance)\n   \"medium\": Tech company OR JD focuses on technical implementation, specific tech stacks, engineering contributions. (e.g., Software Dev at SaaS startup, ML Engineer at AI company)\n</rules>\n\nReturn ONLY valid JSON (no markdown fences, no explanation):\n{\n  \"company_name\": \"\",\n  \"job_title\": \"\",\n  \"location\": \"\",\n  \"core_mission\": \"One sentence summary of why this role exists\",\n  \"top_5_skills\": [{\"rank\": 1, \"skill\": \"Process mapping and workflow documentation\", \"category\": \"technical\", \"is_essential\": true}],\n  \"inferred_pain_points\": [\"Pain point 1\", \"Pain point 2\"],\n  \"tone_and_style\": \"e.g., Professional/Rigorous or Bold/Innovative\",\n  \"value_proposition\": \"The #1 thing they are looking for in a candidate\",\n  \"business_goal\": \"Scale operational capacity by systematizing automation\",\n  \"success_metrics\": [\"efficiency\", \"ROI\", \"accuracy\"],\n  \"seniority_level\": \"intern\",\n  \"ats_keywords\": [\"exact phrase from JD 1\", \"exact phrase from JD 2\", \"exact phrase from JD 3\"],\n  \"key_responsibilities\": [\"Responsibility 1 from JD verbatim\", \"Responsibility 2 from JD verbatim\"],\n  \"tech_level\": \"low\"\n}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "be78bc26-3f7c-40df-a60c-808468def612",
+      "name": "AI Agent - Analyze JD",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        44640,
+        33312
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "f11cd7d9-fb3d-4f30-bcc7-7b497690cb84",
+      "name": "Claude - JD Analysis",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        44712,
+        33536
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst rawSkillsByCategory = input.rawSkillsByCategory || {};\nconst MAX_CHARS = 86;\n\nconst abbreviations = {\n  'PostgreSQL': 'Postgres', 'JavaScript': 'JS', 'TypeScript': 'TS',\n  'development': 'dev', 'Management': 'Mgmt', 'management': 'mgmt',\n};\n\nconst categoryShortnames = {\n  'Data Analysis & Programming': 'Programming',\n  'Analytics Tools & Platforms': 'Analytics',\n  'Machine Learning & AI': 'ML & AI',\n  'Database Management': 'Databases',\n  'Cloud & Infrastructure': 'Cloud',\n  'Data Engineering & Processing': 'Data Engineering',\n};\n\nfunction removeParentheticals(skill) {\n  return skill.replace(/\\s*\\([^)]*\\)/g, '').trim();\n}\n\nfunction abbreviate(skill) {\n  let result = skill;\n  for (const [full, abbr] of Object.entries(abbreviations)) {\n    result = result.replace(full, abbr);\n  }\n  return result;\n}\n\nfunction getLineLength(category, skills) {\n  return `${category}: ${skills.join(', ')}`.length;\n}\n\nconst refinedSkills = {};\n\nfor (const [category, skills] of Object.entries(rawSkillsByCategory)) {\n  if (!Array.isArray(skills)) continue;\n  \n  let currentCategory = category;\n  let currentSkills = [...skills];\n  \n  // Step 1: Check if already valid\n  if (getLineLength(currentCategory, currentSkills) <= MAX_CHARS) {\n    refinedSkills[currentCategory] = currentSkills;\n    continue;\n  }\n  \n  // Step 2: Remove parentheticals\n  currentSkills = currentSkills.map(removeParentheticals);\n  if (getLineLength(currentCategory, currentSkills) <= MAX_CHARS) {\n    refinedSkills[currentCategory] = currentSkills;\n    continue;\n  }\n  \n  // Step 3: Shorten category name\n  currentCategory = categoryShortnames[currentCategory] || currentCategory;\n  if (getLineLength(currentCategory, currentSkills) <= MAX_CHARS) {\n    refinedSkills[currentCategory] = currentSkills;\n    continue;\n  }\n  \n  // Step 4: Abbreviate skills\n  currentSkills = currentSkills.map(abbreviate);\n  if (getLineLength(currentCategory, currentSkills) <= MAX_CHARS) {\n    refinedSkills[currentCategory] = currentSkills;\n    continue;\n  }\n  \n  // Step 5: Truncate to fit\n  while (currentSkills.length > 3 && getLineLength(currentCategory, currentSkills) > MAX_CHARS) {\n    currentSkills.pop();\n  }\n  \n  refinedSkills[currentCategory] = currentSkills;\n}\n\nreturn [{\n  json: {\n    skillsData: { skills_by_category: refinedSkills },\n    branch: 'skills'\n  }\n}];"
+      },
+      "id": "5a3d9066-c16d-4427-9b71-9bc16aea5ac8",
+      "name": "Refine Skills (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48544,
+        33532
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "c17c1e11-bbba-461c-833f-bdf1518fd1b1",
+      "name": "Claude LM Gen P2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        46536,
+        35500
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume bullet-point writer. Output structured JSON only.\n</role>\n\n<context>\nTarget Skills: {{ JSON.stringify($json.currentProject.matched_skills) }}\nBusiness Goal: {{ $json.jdAnalysis.business_goal }}\nJob Title: {{ $json.jdAnalysis.job_title }}\nTop JD Skills: {{ JSON.stringify($json.jdAnalysis.top_5_skills) }}\nATS Keywords: {{ JSON.stringify($json.jdAnalysis.ats_keywords) }}\nCore Mission: {{ $json.jdAnalysis.core_mission }}\nValue Proposition: {{ $json.jdAnalysis.value_proposition }}\nKey Responsibilities: {{ JSON.stringify($json.jdAnalysis.key_responsibilities) }}\nTech Level: {{ $json.jdAnalysis.tech_level }}\nSeniority: intern\n</context>\n\n<project>\n{{ $json.projectContent }}\n</project>\n\n<instructions>\nWrite exactly 4 impact sentences from the project data above.\n\nRules:\n1. TRUTHFUL — only mention tools, metrics, and facts that explicitly appear in the project data. Never invent.\n2. CAUSAL — every bullet: ACTION → MECHANISM → OUTCOME. No magic leaps.\n3. JD-ALIGNED — at least 3 of 4 bullets must use ATS Keywords or mirror Key Responsibilities phrasing. Use VERBATIM JD phrases where truthful. Frame through Core Mission and Value Proposition.\n4. DISTINCT — each bullet must cover a DIFFERENT combination of: (action) × (domain/module) × (outcome). If two bullets share the same outcome metric (e.g. both mention the same time saving), keep only the one with richer mechanism. Self-check: if any two bullets could be merged without losing information, they are redundant — rewrite the weaker one.\n5. COMPACT — each bullet MUST be 15-25 words. Prefer short punchy phrasing. Use slashes (Python/SQL) instead of \"and\". Abbreviate where natural (app, dev, ML). One action, one mechanism, one outcome.\n6. STRONG VERBS — Use 4 different lead verbs from: Engineered, Architected, Spearheaded, Optimized, Automated, Developed, Implemented, Reduced, Accelerated, Streamlined, Delivered, Built, Designed, Integrated, Orchestrated, Mapped, Documented, Evaluated, Redesigned. NEVER use: helped, worked on, was responsible for, assisted, participated in, involved in, used, did.\n7. QUANTIFIED — include specific numbers, percentages, scale, or time savings from the project data where available.\n8. TECH LEVEL CALIBRATION — adjust based on Tech Level:\n   If \"low\": Lead with BUSINESS OUTCOME, mention tools only parenthetically or as mechanism. Pattern: \"[Business verb] [business outcome] by/via [mechanism]\". MAX 1 of 4 bullets may name a specific technology as the subject.\n   If \"medium\": Technical details welcome but each bullet must still end with measurable business impact.\n</instructions>\n\n<examples>\nGOOD (tech_level=low, ~20 words each):\n- \"Mapped and redesigned 4 data workflows, embedding quality controls and standardized hand-offs across 20+ sources.\"\n- \"Automated reporting drafts via AI pipeline, reducing preparation from 40 minutes to 2 minutes per cycle.\"\n- \"Evaluated 3 AI tools against manual processes, documenting fit, accuracy, and integration readiness for implementation roadmap.\"\n\nGOOD (tech_level=medium, ~20 words each):\n- \"Engineered SwiftUI/MVVM architecture with 6 core modules including real-time calculation, OAuth sync, and CoreData persistence.\"\n- \"Built automated data extraction pipeline processing 500+ entries with 95% accuracy via browser automation and AI validation.\"\n\nBAD:\n- \"Built a scalable, future-ready solution aligned with automation goals.\" → pure filler, no specifics.\n- \"Helped implement scraping logic, achieving 95% accuracy.\" → weak verb, no mechanism.\n- \"Built n8n workflow with Claude API using webhook-triggered async processing with 30s intervals.\" → tool-first, no business outcome (wrong for low tech_level).\n</examples>\n\n<output>\nReturn ONLY this JSON, no markdown fences, start with {:\n{\n  \"impact_sentences\": [\"<bullet>\", \"<bullet>\", \"<bullet>\", \"<bullet>\"]\n}\n</output>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "feba2eac-8a00-4270-b09d-80c208bd2734",
+      "name": "AI - Generate Bullets P2",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        46464,
+        35276
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const response = $input.item.json;\nconst content = response.output || response.text || '';\n\nif (!content || content.trim() === '') {\n  throw new Error('[Parse Written Impact] AI returned empty content');\n}\n\nlet jsonStr = content;\nif (content.includes('```json')) {\n  const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else if (content.includes('```')) {\n  const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) jsonStr = jsonMatch[0];\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonStr.trim());\n} catch (e) {\n  throw new Error('[Parse Written Impact] JSON parse failed: ' + e.message);\n}\n\nif (!parsed.impact_sentences || parsed.impact_sentences.length < 4) {\n  throw new Error('[Parse Written Impact] Missing or incomplete impact_sentences');\n}\n\n// Assemble full projectData from upstream context + AI bullets\nconst routeData = $('Route Projects').item.json;\n\nreturn {\n  json: {\n    projectData: {\n      project_title: routeData.projectTitle || '',\n      project_date: routeData.projectDate || '',\n      original_name: routeData.projectFileName || '',\n      matched_skill: routeData.currentProject?.matched_skills || [],\n      project_url: routeData.projectUrl || '',\n      impact_sentences: parsed.impact_sentences,\n      qa_log: parsed.qa_log || []\n    },\n    iteration: 0,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "1b44ff20-4459-44a3-bb64-b83dbc6cfaca",
+      "name": "Parse Written Impact P2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47904,
+        35352
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.projectResults) {\n  staticData.projectResults = [];\n}\n\n// Guard against cross-execution contamination:\n// If this item's batchId doesn't match staticData's batchId, clear stale data\nconst itemBatchId = input.batchId || '';\nif (staticData.batchId && itemBatchId && staticData.batchId !== itemBatchId) {\n  staticData.projectResults = [];\n  staticData.batchId = itemBatchId;\n}\n\nif (input.projectData) {\n  // Recover project_url if it was lost during AI sentence shortening\n  const projectUrlsMap = $('Process Projects').first().json.projectUrlsMap || {};\n  const originalName = input.projectData.original_name || '';\n  if (!input.projectData.project_url && projectUrlsMap[originalName]) {\n    input.projectData.project_url = projectUrlsMap[originalName];\n  }\n  \n  staticData.projectResults.push(input.projectData);\n}\n\nreturn {\n  json: {\n    optimizedProject: input.projectData,\n    projectCount: staticData.projectResults.length,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "28cf7971-432e-493d-b0b9-65b14b203add",
+      "name": "Finalize Project P2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48832,
+        35524
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nlet projectData = input.projectData;\n\nif (input.output || input.text) {\n  const content = input.output || input.text || '';\n  let jsonStr = content;\n\n  if (content.includes('```json')) {\n    const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n    if (match) jsonStr = match[1];\n  } else if (content.includes('```')) {\n    const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n    if (match) jsonStr = match[1];\n  } else {\n    const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) jsonStr = jsonMatch[0];\n  }\n\n  try {\n    const parsed = JSON.parse(jsonStr.trim());\n    if (parsed.impact_sentences) {\n      projectData.impact_sentences = parsed.impact_sentences;\n    }\n  } catch (e) {}\n}\n\nconst MAX_CHARS = 180;\nconst iteration = (input.iteration || 0) + 1;\n\nconst fillerPatterns = [\n  /\\bby leveraging\\b/gi,\n  /\\bthrough the use of\\b/gi,\n  /\\bin order to\\b/gi,\n  /\\bby utilizing\\b/gi,\n  /\\bvia the\\b/gi,\n];\n\nconst abbreviationMap = {\n  'development': 'dev',\n  'application': 'app',\n  'applications': 'apps',\n  'approximately': '~',\n  'processing': 'proc.',\n};\n\nfunction codeTrim(sentence) {\n  let s = sentence;\n  s = s.replace(/\\s*\\([^)]{10,}\\)/g, '');\n  for (const pattern of fillerPatterns) {\n    s = s.replace(pattern, '');\n  }\n  for (const [full, abbr] of Object.entries(abbreviationMap)) {\n    s = s.replace(new RegExp(`\\\\b${full}\\\\b`, 'gi'), abbr);\n  }\n  s = s.replace(/\\s{2,}/g, ' ').trim();\n  return s;\n}\n\nconst sentences = projectData.impact_sentences || [];\nconst tooLongSentences = [];\nconst validSentences = [];\nconst tooLongIndices = [];\nconst validIndices = [];\n\nfor (let i = 0; i < sentences.length; i++) {\n  let sentence = sentences[i];\n\n  if (sentence.length > MAX_CHARS && iteration === 1) {\n    sentence = codeTrim(sentence);\n    sentences[i] = sentence;\n    projectData.impact_sentences[i] = sentence;\n  }\n\n  if (sentence.length > MAX_CHARS) {\n    tooLongSentences.push({\n      sentence: sentence,\n      currentChars: sentence.length,\n      needToRemove: sentence.length - MAX_CHARS\n    });\n    tooLongIndices.push(i);\n  } else {\n    validSentences.push(sentence);\n    validIndices.push(i);\n  }\n}\n\nconst allValid = tooLongSentences.length === 0;\nconst maxIterations = 5;\nconst shouldContinue = !allValid && iteration < maxIterations;\n\nreturn {\n  json: {\n    projectData: projectData,\n    tooLongSentences: tooLongSentences,\n    tooLongIndices: tooLongIndices,\n    validSentences: validSentences,\n    validIndices: validIndices,\n    allValid: allValid,\n    iteration: iteration,\n    shouldContinue: shouldContinue,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "55ffec95-3e17-42a9-90f0-a147e14e609c",
+      "name": "Validate Char Count P2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48256,
+        35352
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume bullet-point writer. Output structured JSON only.\n</role>\n\n<context>\nTarget Skills: {{ JSON.stringify($json.currentProject.matched_skills) }}\nBusiness Goal: {{ $json.jdAnalysis.business_goal }}\nJob Title: {{ $json.jdAnalysis.job_title }}\nTop JD Skills: {{ JSON.stringify($json.jdAnalysis.top_5_skills) }}\nATS Keywords: {{ JSON.stringify($json.jdAnalysis.ats_keywords) }}\nCore Mission: {{ $json.jdAnalysis.core_mission }}\nValue Proposition: {{ $json.jdAnalysis.value_proposition }}\nKey Responsibilities: {{ JSON.stringify($json.jdAnalysis.key_responsibilities) }}\nTech Level: {{ $json.jdAnalysis.tech_level }}\nSeniority: intern\n</context>\n\n<project>\n{{ $json.projectContent }}\n</project>\n\n<instructions>\nWrite exactly 4 impact sentences from the project data above.\n\nRules:\n1. TRUTHFUL — only mention tools, metrics, and facts that explicitly appear in the project data. Never invent.\n2. CAUSAL — every bullet: ACTION → MECHANISM → OUTCOME. No magic leaps.\n3. JD-ALIGNED — at least 3 of 4 bullets must use ATS Keywords or mirror Key Responsibilities phrasing. Use VERBATIM JD phrases where truthful. Frame through Core Mission and Value Proposition.\n4. DISTINCT — each bullet must cover a DIFFERENT combination of: (action) × (domain/module) × (outcome). If two bullets share the same outcome metric (e.g. both mention the same time saving), keep only the one with richer mechanism. Self-check: if any two bullets could be merged without losing information, they are redundant — rewrite the weaker one.\n5. COMPACT — each bullet MUST be 15-25 words. Prefer short punchy phrasing. Use slashes (Python/SQL) instead of \"and\". Abbreviate where natural (app, dev, ML). One action, one mechanism, one outcome.\n6. STRONG VERBS — Use 4 different lead verbs from: Engineered, Architected, Spearheaded, Optimized, Automated, Developed, Implemented, Reduced, Accelerated, Streamlined, Delivered, Built, Designed, Integrated, Orchestrated, Mapped, Documented, Evaluated, Redesigned. NEVER use: helped, worked on, was responsible for, assisted, participated in, involved in, used, did.\n7. QUANTIFIED — include specific numbers, percentages, scale, or time savings from the project data where available.\n8. TECH LEVEL CALIBRATION — adjust based on Tech Level:\n   If \"low\": Lead with BUSINESS OUTCOME, mention tools only parenthetically or as mechanism. Pattern: \"[Business verb] [business outcome] by/via [mechanism]\". MAX 1 of 4 bullets may name a specific technology as the subject.\n   If \"medium\": Technical details welcome but each bullet must still end with measurable business impact.\n</instructions>\n\n<examples>\nGOOD (tech_level=low, ~20 words each):\n- \"Mapped and redesigned 4 data workflows, embedding quality controls and standardized hand-offs across 20+ sources.\"\n- \"Automated reporting drafts via AI pipeline, reducing preparation from 40 minutes to 2 minutes per cycle.\"\n- \"Evaluated 3 AI tools against manual processes, documenting fit, accuracy, and integration readiness for implementation roadmap.\"\n\nGOOD (tech_level=medium, ~20 words each):\n- \"Engineered SwiftUI/MVVM architecture with 6 core modules including real-time calculation, OAuth sync, and CoreData persistence.\"\n- \"Built automated data extraction pipeline processing 500+ entries with 95% accuracy via browser automation and AI validation.\"\n\nBAD:\n- \"Built a scalable, future-ready solution aligned with automation goals.\" → pure filler, no specifics.\n- \"Helped implement scraping logic, achieving 95% accuracy.\" → weak verb, no mechanism.\n- \"Built n8n workflow with Claude API using webhook-triggered async processing with 30s intervals.\" → tool-first, no business outcome (wrong for low tech_level).\n</examples>\n\n<output>\nReturn ONLY this JSON, no markdown fences, start with {:\n{\n  \"impact_sentences\": [\"<bullet>\", \"<bullet>\", \"<bullet>\", \"<bullet>\"]\n}\n</output>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "0dabd2c7-27f2-418a-a5de-9d950e04e4ce",
+      "name": "AI - Generate Bullets P1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        46464,
+        34172
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "7b9f05bf-a408-4382-b548-6627ae3f1432",
+      "name": "Claude LM Gen P1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        46536,
+        34396
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const response = $input.item.json;\nconst content = response.output || response.text || '';\n\nif (!content || content.trim() === '') {\n  throw new Error('[Parse Written Impact] AI returned empty content');\n}\n\nlet jsonStr = content;\nif (content.includes('```json')) {\n  const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else if (content.includes('```')) {\n  const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) jsonStr = jsonMatch[0];\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonStr.trim());\n} catch (e) {\n  throw new Error('[Parse Written Impact] JSON parse failed: ' + e.message);\n}\n\nif (!parsed.impact_sentences || parsed.impact_sentences.length < 4) {\n  throw new Error('[Parse Written Impact] Missing or incomplete impact_sentences');\n}\n\n// Assemble full projectData from upstream context + AI bullets\nconst routeData = $('Route Projects').item.json;\n\nreturn {\n  json: {\n    projectData: {\n      project_title: routeData.projectTitle || '',\n      project_date: routeData.projectDate || '',\n      original_name: routeData.projectFileName || '',\n      matched_skill: routeData.currentProject?.matched_skills || [],\n      project_url: routeData.projectUrl || '',\n      impact_sentences: parsed.impact_sentences,\n      qa_log: parsed.qa_log || []\n    },\n    iteration: 0,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "3c2dbd1f-e519-4482-9b0c-38ad7e8c1d88",
+      "name": "Parse Written Impact P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47904,
+        34248
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nlet projectData = input.projectData;\n\nif (input.output || input.text) {\n  const content = input.output || input.text || '';\n  let jsonStr = content;\n\n  if (content.includes('```json')) {\n    const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n    if (match) jsonStr = match[1];\n  } else if (content.includes('```')) {\n    const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n    if (match) jsonStr = match[1];\n  } else {\n    const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) jsonStr = jsonMatch[0];\n  }\n\n  try {\n    const parsed = JSON.parse(jsonStr.trim());\n    if (parsed.impact_sentences) {\n      projectData.impact_sentences = parsed.impact_sentences;\n    }\n  } catch (e) {}\n}\n\nconst MAX_CHARS = 180;\nconst iteration = (input.iteration || 0) + 1;\n\nconst fillerPatterns = [\n  /\\bby leveraging\\b/gi,\n  /\\bthrough the use of\\b/gi,\n  /\\bin order to\\b/gi,\n  /\\bby utilizing\\b/gi,\n  /\\bvia the\\b/gi,\n];\n\nconst abbreviationMap = {\n  'development': 'dev',\n  'application': 'app',\n  'applications': 'apps',\n  'approximately': '~',\n  'processing': 'proc.',\n};\n\nfunction codeTrim(sentence) {\n  let s = sentence;\n  s = s.replace(/\\s*\\([^)]{10,}\\)/g, '');\n  for (const pattern of fillerPatterns) {\n    s = s.replace(pattern, '');\n  }\n  for (const [full, abbr] of Object.entries(abbreviationMap)) {\n    s = s.replace(new RegExp(`\\\\b${full}\\\\b`, 'gi'), abbr);\n  }\n  s = s.replace(/\\s{2,}/g, ' ').trim();\n  return s;\n}\n\nconst sentences = projectData.impact_sentences || [];\nconst tooLongSentences = [];\nconst validSentences = [];\nconst tooLongIndices = [];\nconst validIndices = [];\n\nfor (let i = 0; i < sentences.length; i++) {\n  let sentence = sentences[i];\n\n  if (sentence.length > MAX_CHARS && iteration === 1) {\n    sentence = codeTrim(sentence);\n    sentences[i] = sentence;\n    projectData.impact_sentences[i] = sentence;\n  }\n\n  if (sentence.length > MAX_CHARS) {\n    tooLongSentences.push({\n      sentence: sentence,\n      currentChars: sentence.length,\n      needToRemove: sentence.length - MAX_CHARS\n    });\n    tooLongIndices.push(i);\n  } else {\n    validSentences.push(sentence);\n    validIndices.push(i);\n  }\n}\n\nconst allValid = tooLongSentences.length === 0;\nconst maxIterations = 5;\nconst shouldContinue = !allValid && iteration < maxIterations;\n\nreturn {\n  json: {\n    projectData: projectData,\n    tooLongSentences: tooLongSentences,\n    tooLongIndices: tooLongIndices,\n    validSentences: validSentences,\n    validIndices: validIndices,\n    allValid: allValid,\n    iteration: iteration,\n    shouldContinue: shouldContinue,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "22783798-96f1-4047-9699-c5e73b315edc",
+      "name": "Validate Char Count P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48256,
+        34248
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.projectResults) {\n  staticData.projectResults = [];\n}\n\n// Guard against cross-execution contamination:\n// If this item's batchId doesn't match staticData's batchId, clear stale data\nconst itemBatchId = input.batchId || '';\nif (staticData.batchId && itemBatchId && staticData.batchId !== itemBatchId) {\n  staticData.projectResults = [];\n  staticData.batchId = itemBatchId;\n}\n\nif (input.projectData) {\n  // Recover project_url if it was lost during AI sentence shortening\n  const projectUrlsMap = $('Process Projects').first().json.projectUrlsMap || {};\n  const originalName = input.projectData.original_name || '';\n  if (!input.projectData.project_url && projectUrlsMap[originalName]) {\n    input.projectData.project_url = projectUrlsMap[originalName];\n  }\n  \n  staticData.projectResults.push(input.projectData);\n}\n\nreturn {\n  json: {\n    optimizedProject: input.projectData,\n    projectCount: staticData.projectResults.length,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "3135dbed-beba-4d54-b1e3-6d0343da52b6",
+      "name": "Finalize Project P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48832,
+        34420
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume bullet-point writer. Output structured JSON only.\n</role>\n\n<context>\nTarget Skills: {{ JSON.stringify($json.currentProject.matched_skills) }}\nBusiness Goal: {{ $json.jdAnalysis.business_goal }}\nJob Title: {{ $json.jdAnalysis.job_title }}\nTop JD Skills: {{ JSON.stringify($json.jdAnalysis.top_5_skills) }}\nATS Keywords: {{ JSON.stringify($json.jdAnalysis.ats_keywords) }}\nCore Mission: {{ $json.jdAnalysis.core_mission }}\nValue Proposition: {{ $json.jdAnalysis.value_proposition }}\nKey Responsibilities: {{ JSON.stringify($json.jdAnalysis.key_responsibilities) }}\nTech Level: {{ $json.jdAnalysis.tech_level }}\nSeniority: intern\n</context>\n\n<project>\n{{ $json.projectContent }}\n</project>\n\n<instructions>\nWrite exactly 4 impact sentences from the project data above.\n\nRules:\n1. TRUTHFUL — only mention tools, metrics, and facts that explicitly appear in the project data. Never invent.\n2. CAUSAL — every bullet: ACTION → MECHANISM → OUTCOME. No magic leaps.\n3. JD-ALIGNED — at least 3 of 4 bullets must use ATS Keywords or mirror Key Responsibilities phrasing. Use VERBATIM JD phrases where truthful. Frame through Core Mission and Value Proposition.\n4. DISTINCT — each bullet must cover a DIFFERENT combination of: (action) × (domain/module) × (outcome). If two bullets share the same outcome metric (e.g. both mention the same time saving), keep only the one with richer mechanism. Self-check: if any two bullets could be merged without losing information, they are redundant — rewrite the weaker one.\n5. COMPACT — each bullet MUST be 15-25 words. Prefer short punchy phrasing. Use slashes (Python/SQL) instead of \"and\". Abbreviate where natural (app, dev, ML). One action, one mechanism, one outcome.\n6. STRONG VERBS — Use 4 different lead verbs from: Engineered, Architected, Spearheaded, Optimized, Automated, Developed, Implemented, Reduced, Accelerated, Streamlined, Delivered, Built, Designed, Integrated, Orchestrated, Mapped, Documented, Evaluated, Redesigned. NEVER use: helped, worked on, was responsible for, assisted, participated in, involved in, used, did.\n7. QUANTIFIED — include specific numbers, percentages, scale, or time savings from the project data where available.\n8. TECH LEVEL CALIBRATION — adjust based on Tech Level:\n   If \"low\": Lead with BUSINESS OUTCOME, mention tools only parenthetically or as mechanism. Pattern: \"[Business verb] [business outcome] by/via [mechanism]\". MAX 1 of 4 bullets may name a specific technology as the subject.\n   If \"medium\": Technical details welcome but each bullet must still end with measurable business impact.\n</instructions>\n\n<examples>\nGOOD (tech_level=low, ~20 words each):\n- \"Mapped and redesigned 4 data workflows, embedding quality controls and standardized hand-offs across 20+ sources.\"\n- \"Automated reporting drafts via AI pipeline, reducing preparation from 40 minutes to 2 minutes per cycle.\"\n- \"Evaluated 3 AI tools against manual processes, documenting fit, accuracy, and integration readiness for implementation roadmap.\"\n\nGOOD (tech_level=medium, ~20 words each):\n- \"Engineered SwiftUI/MVVM architecture with 6 core modules including real-time calculation, OAuth sync, and CoreData persistence.\"\n- \"Built automated data extraction pipeline processing 500+ entries with 95% accuracy via browser automation and AI validation.\"\n\nBAD:\n- \"Built a scalable, future-ready solution aligned with automation goals.\" → pure filler, no specifics.\n- \"Helped implement scraping logic, achieving 95% accuracy.\" → weak verb, no mechanism.\n- \"Built n8n workflow with Claude API using webhook-triggered async processing with 30s intervals.\" → tool-first, no business outcome (wrong for low tech_level).\n</examples>\n\n<output>\nReturn ONLY this JSON, no markdown fences, start with {:\n{\n  \"impact_sentences\": [\"<bullet>\", \"<bullet>\", \"<bullet>\", \"<bullet>\"]\n}\n</output>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "8caca64c-2a0f-4b32-b84a-5544003216f3",
+      "name": "AI - Generate Bullets P3",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        46464,
+        36540
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "dc43fb5d-e736-4c87-bac8-7397ab4ee980",
+      "name": "Claude LM Gen P3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        46536,
+        36764
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const response = $input.item.json;\nconst content = response.output || response.text || '';\n\nif (!content || content.trim() === '') {\n  throw new Error('[Parse Written Impact] AI returned empty content');\n}\n\nlet jsonStr = content;\nif (content.includes('```json')) {\n  const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else if (content.includes('```')) {\n  const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) jsonStr = jsonMatch[0];\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonStr.trim());\n} catch (e) {\n  throw new Error('[Parse Written Impact] JSON parse failed: ' + e.message);\n}\n\nif (!parsed.impact_sentences || parsed.impact_sentences.length < 4) {\n  throw new Error('[Parse Written Impact] Missing or incomplete impact_sentences');\n}\n\n// Assemble full projectData from upstream context + AI bullets\nconst routeData = $('Route Projects').item.json;\n\nreturn {\n  json: {\n    projectData: {\n      project_title: routeData.projectTitle || '',\n      project_date: routeData.projectDate || '',\n      original_name: routeData.projectFileName || '',\n      matched_skill: routeData.currentProject?.matched_skills || [],\n      project_url: routeData.projectUrl || '',\n      impact_sentences: parsed.impact_sentences,\n      qa_log: parsed.qa_log || []\n    },\n    iteration: 0,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "8b83b958-d6c3-4671-ad7a-edee053064f5",
+      "name": "Parse Written Impact P3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47904,
+        36616
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nlet projectData = input.projectData;\n\nif (input.output || input.text) {\n  const content = input.output || input.text || '';\n  let jsonStr = content;\n\n  if (content.includes('```json')) {\n    const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n    if (match) jsonStr = match[1];\n  } else if (content.includes('```')) {\n    const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n    if (match) jsonStr = match[1];\n  } else {\n    const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) jsonStr = jsonMatch[0];\n  }\n\n  try {\n    const parsed = JSON.parse(jsonStr.trim());\n    if (parsed.impact_sentences) {\n      projectData.impact_sentences = parsed.impact_sentences;\n    }\n  } catch (e) {}\n}\n\nconst MAX_CHARS = 180;\nconst iteration = (input.iteration || 0) + 1;\n\nconst fillerPatterns = [\n  /\\bby leveraging\\b/gi,\n  /\\bthrough the use of\\b/gi,\n  /\\bin order to\\b/gi,\n  /\\bby utilizing\\b/gi,\n  /\\bvia the\\b/gi,\n];\n\nconst abbreviationMap = {\n  'development': 'dev',\n  'application': 'app',\n  'applications': 'apps',\n  'approximately': '~',\n  'processing': 'proc.',\n};\n\nfunction codeTrim(sentence) {\n  let s = sentence;\n  s = s.replace(/\\s*\\([^)]{10,}\\)/g, '');\n  for (const pattern of fillerPatterns) {\n    s = s.replace(pattern, '');\n  }\n  for (const [full, abbr] of Object.entries(abbreviationMap)) {\n    s = s.replace(new RegExp(`\\\\b${full}\\\\b`, 'gi'), abbr);\n  }\n  s = s.replace(/\\s{2,}/g, ' ').trim();\n  return s;\n}\n\nconst sentences = projectData.impact_sentences || [];\nconst tooLongSentences = [];\nconst validSentences = [];\nconst tooLongIndices = [];\nconst validIndices = [];\n\nfor (let i = 0; i < sentences.length; i++) {\n  let sentence = sentences[i];\n\n  if (sentence.length > MAX_CHARS && iteration === 1) {\n    sentence = codeTrim(sentence);\n    sentences[i] = sentence;\n    projectData.impact_sentences[i] = sentence;\n  }\n\n  if (sentence.length > MAX_CHARS) {\n    tooLongSentences.push({\n      sentence: sentence,\n      currentChars: sentence.length,\n      needToRemove: sentence.length - MAX_CHARS\n    });\n    tooLongIndices.push(i);\n  } else {\n    validSentences.push(sentence);\n    validIndices.push(i);\n  }\n}\n\nconst allValid = tooLongSentences.length === 0;\nconst maxIterations = 5;\nconst shouldContinue = !allValid && iteration < maxIterations;\n\nreturn {\n  json: {\n    projectData: projectData,\n    tooLongSentences: tooLongSentences,\n    tooLongIndices: tooLongIndices,\n    validSentences: validSentences,\n    validIndices: validIndices,\n    allValid: allValid,\n    iteration: iteration,\n    shouldContinue: shouldContinue,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "1cb45654-b29b-4e8a-94e6-e5665fd071d6",
+      "name": "Validate Char Count P3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48256,
+        36616
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.projectResults) {\n  staticData.projectResults = [];\n}\n\n// Guard against cross-execution contamination:\n// If this item's batchId doesn't match staticData's batchId, clear stale data\nconst itemBatchId = input.batchId || '';\nif (staticData.batchId && itemBatchId && staticData.batchId !== itemBatchId) {\n  staticData.projectResults = [];\n  staticData.batchId = itemBatchId;\n}\n\nif (input.projectData) {\n  // Recover project_url if it was lost during AI sentence shortening\n  const projectUrlsMap = $('Process Projects').first().json.projectUrlsMap || {};\n  const originalName = input.projectData.original_name || '';\n  if (!input.projectData.project_url && projectUrlsMap[originalName]) {\n    input.projectData.project_url = projectUrlsMap[originalName];\n  }\n  \n  staticData.projectResults.push(input.projectData);\n}\n\nreturn {\n  json: {\n    optimizedProject: input.projectData,\n    projectCount: staticData.projectResults.length,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "fccb95c6-e2ed-4beb-9ca9-e178ab6ad277",
+      "name": "Finalize Project P3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48832,
+        36660
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "output": "={{ $json.projectIndex }}"
+      },
+      "id": "0f092422-597e-419a-af11-6aa7b38c944f",
+      "name": "Route Projects",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        46240,
+        35244
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "5ad5dd48-b1e8-4f08-a895-019700d050e0",
+      "name": "Wait For All Projects",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        49120,
+        35508
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume bullet QA reviewer. Diagnose problems only — do NOT rewrite.\n</role>\n\n<input>\nBullets: {{ $json.output }}\nOriginal project data: {{ $('Route Projects').item.json.projectContent }}\nTarget Skills: {{ JSON.stringify($('Route Projects').item.json.currentProject.matched_skills) }}\nBusiness Goal: {{ $('Route Projects').item.json.jdAnalysis.business_goal }}\nJob Title: {{ $('Route Projects').item.json.jdAnalysis.job_title }}\nCore Mission: {{ $('Route Projects').item.json.jdAnalysis.core_mission }}\nTop JD Skills: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.top_5_skills) }}\nATS Keywords: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.ats_keywords) }}\nValue Proposition: {{ $('Route Projects').item.json.jdAnalysis.value_proposition }}\nKey Responsibilities: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.key_responsibilities) }}\nTech Level: {{ $('Route Projects').item.json.jdAnalysis.tech_level }}\n</input>\n\n<checks>\nFor each bullet, review from these 6 dimensions:\n\n1. JD RELEVANCE (relevance)\n- Does this bullet demonstrate key skills from Top JD Skills or Target Skills?\n- Does it use ATS Keywords or mirror Key Responsibilities phrasing?\n- Does it align with the Core Mission and Value Proposition?\n- If completely irrelevant to the Job Title, note: \"Irrelevant to target role, consider replacing\"\n\n2. QUANTIFIED IMPACT (quantified_impact)\n- Does it contain specific numbers, percentages, scale, or time savings?\n- If not quantified, point out where numbers could be added with example format\n- Note: not every bullet can be quantified, but should at least convey magnitude of impact\n\n3. ACTION VERB STRENGTH (action_verb)\n- Does it open with a strong, specific action verb?\n- Weak verb blacklist: helped, worked on, was responsible for, assisted, participated in, involved in, used, did\n- Recommend: Engineered, Architected, Spearheaded, Optimized, Automated, Developed, Implemented, Reduced, Accelerated, Streamlined, Mapped, Documented, Evaluated, Redesigned\n\n4. CONCISENESS (conciseness)\n- Is length appropriate? Ideal: 1-2 lines (~15-25 English words)\n- Any redundant phrases? (\"in order to\" -> \"to\", \"was able to\" -> remove)\n- Does one bullet cram too much? If so, suggest splitting\n\n5. REDUNDANCY (redundancy)\n- Do any two bullets convey the same core message, metric, or outcome?\n- Examples: two bullets both mention the same time saving, both describe eliminating the same problem, both describe the same action differently\n- If redundant pair found, fail the WEAKER bullet (less specific, less quantified, or less JD-aligned)\n\n6. TECH LEVEL FIT (tech_level_fit)\n- Tech Level is \"{{ $('Route Projects').item.json.jdAnalysis.tech_level }}\"\n- If \"low\": Does the bullet lead with business outcome? Fail if a bullet's subject is a technology name (e.g. \"Built n8n workflow...\" is wrong for low).\n- If \"medium\": Technical detail is fine, but does it still include measurable impact?\n</checks>\n\n<output>\nReturn ONLY this JSON, no markdown fences, start with {:\n{\n  \"impact_sentences\": [\"<copy unchanged>\", \"<copy unchanged>\", \"<copy unchanged>\", \"<copy unchanged>\"],\n  \"qa_log\": [\n    {\"bullet\": 1, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"},\n    {\"bullet\": 2, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"},\n    {\"bullet\": 3, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"},\n    {\"bullet\": 4, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"}\n  ]\n}\nCopy all impact_sentences unchanged from input. Only qa_log reflects your judgment.\nfailed_checks should list dimension names: \"relevance\", \"quantified_impact\", \"action_verb\", \"conciseness\", \"redundancy\", \"tech_level_fit\"\n</output>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "ad6ce7d0-5a1d-48ac-bd55-261e4eb8f4c0",
+      "name": "AI - QA Review P1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        47040,
+        34172
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "369e9874-8180-43cf-8cbc-287a5d09b5f8",
+      "name": "Claude LM QA P1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        47112,
+        34396
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume bullet QA reviewer. Diagnose problems only — do NOT rewrite.\n</role>\n\n<input>\nBullets: {{ $json.output }}\nOriginal project data: {{ $('Route Projects').item.json.projectContent }}\nTarget Skills: {{ JSON.stringify($('Route Projects').item.json.currentProject.matched_skills) }}\nBusiness Goal: {{ $('Route Projects').item.json.jdAnalysis.business_goal }}\nJob Title: {{ $('Route Projects').item.json.jdAnalysis.job_title }}\nCore Mission: {{ $('Route Projects').item.json.jdAnalysis.core_mission }}\nTop JD Skills: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.top_5_skills) }}\nATS Keywords: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.ats_keywords) }}\nValue Proposition: {{ $('Route Projects').item.json.jdAnalysis.value_proposition }}\nKey Responsibilities: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.key_responsibilities) }}\nTech Level: {{ $('Route Projects').item.json.jdAnalysis.tech_level }}\n</input>\n\n<checks>\nFor each bullet, review from these 6 dimensions:\n\n1. JD RELEVANCE (relevance)\n- Does this bullet demonstrate key skills from Top JD Skills or Target Skills?\n- Does it use ATS Keywords or mirror Key Responsibilities phrasing?\n- Does it align with the Core Mission and Value Proposition?\n- If completely irrelevant to the Job Title, note: \"Irrelevant to target role, consider replacing\"\n\n2. QUANTIFIED IMPACT (quantified_impact)\n- Does it contain specific numbers, percentages, scale, or time savings?\n- If not quantified, point out where numbers could be added with example format\n- Note: not every bullet can be quantified, but should at least convey magnitude of impact\n\n3. ACTION VERB STRENGTH (action_verb)\n- Does it open with a strong, specific action verb?\n- Weak verb blacklist: helped, worked on, was responsible for, assisted, participated in, involved in, used, did\n- Recommend: Engineered, Architected, Spearheaded, Optimized, Automated, Developed, Implemented, Reduced, Accelerated, Streamlined, Mapped, Documented, Evaluated, Redesigned\n\n4. CONCISENESS (conciseness)\n- Is length appropriate? Ideal: 1-2 lines (~15-25 English words)\n- Any redundant phrases? (\"in order to\" -> \"to\", \"was able to\" -> remove)\n- Does one bullet cram too much? If so, suggest splitting\n\n5. REDUNDANCY (redundancy)\n- Do any two bullets convey the same core message, metric, or outcome?\n- Examples: two bullets both mention the same time saving, both describe eliminating the same problem, both describe the same action differently\n- If redundant pair found, fail the WEAKER bullet (less specific, less quantified, or less JD-aligned)\n\n6. TECH LEVEL FIT (tech_level_fit)\n- Tech Level is \"{{ $('Route Projects').item.json.jdAnalysis.tech_level }}\"\n- If \"low\": Does the bullet lead with business outcome? Fail if a bullet's subject is a technology name (e.g. \"Built n8n workflow...\" is wrong for low).\n- If \"medium\": Technical detail is fine, but does it still include measurable impact?\n</checks>\n\n<output>\nReturn ONLY this JSON, no markdown fences, start with {:\n{\n  \"impact_sentences\": [\"<copy unchanged>\", \"<copy unchanged>\", \"<copy unchanged>\", \"<copy unchanged>\"],\n  \"qa_log\": [\n    {\"bullet\": 1, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"},\n    {\"bullet\": 2, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"},\n    {\"bullet\": 3, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"},\n    {\"bullet\": 4, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"}\n  ]\n}\nCopy all impact_sentences unchanged from input. Only qa_log reflects your judgment.\nfailed_checks should list dimension names: \"relevance\", \"quantified_impact\", \"action_verb\", \"conciseness\", \"redundancy\", \"tech_level_fit\"\n</output>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "00b1b64f-f67c-4afe-87ad-cffbe0b0680c",
+      "name": "AI - QA Review P2",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        47040,
+        35276
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "c80cc4ad-be3f-47c8-a59a-9d7dca4879ed",
+      "name": "Claude LM QA P2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        47120,
+        35504
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume bullet QA reviewer. Diagnose problems only — do NOT rewrite.\n</role>\n\n<input>\nBullets: {{ $json.output }}\nOriginal project data: {{ $('Route Projects').item.json.projectContent }}\nTarget Skills: {{ JSON.stringify($('Route Projects').item.json.currentProject.matched_skills) }}\nBusiness Goal: {{ $('Route Projects').item.json.jdAnalysis.business_goal }}\nJob Title: {{ $('Route Projects').item.json.jdAnalysis.job_title }}\nCore Mission: {{ $('Route Projects').item.json.jdAnalysis.core_mission }}\nTop JD Skills: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.top_5_skills) }}\nATS Keywords: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.ats_keywords) }}\nValue Proposition: {{ $('Route Projects').item.json.jdAnalysis.value_proposition }}\nKey Responsibilities: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.key_responsibilities) }}\nTech Level: {{ $('Route Projects').item.json.jdAnalysis.tech_level }}\n</input>\n\n<checks>\nFor each bullet, review from these 6 dimensions:\n\n1. JD RELEVANCE (relevance)\n- Does this bullet demonstrate key skills from Top JD Skills or Target Skills?\n- Does it use ATS Keywords or mirror Key Responsibilities phrasing?\n- Does it align with the Core Mission and Value Proposition?\n- If completely irrelevant to the Job Title, note: \"Irrelevant to target role, consider replacing\"\n\n2. QUANTIFIED IMPACT (quantified_impact)\n- Does it contain specific numbers, percentages, scale, or time savings?\n- If not quantified, point out where numbers could be added with example format\n- Note: not every bullet can be quantified, but should at least convey magnitude of impact\n\n3. ACTION VERB STRENGTH (action_verb)\n- Does it open with a strong, specific action verb?\n- Weak verb blacklist: helped, worked on, was responsible for, assisted, participated in, involved in, used, did\n- Recommend: Engineered, Architected, Spearheaded, Optimized, Automated, Developed, Implemented, Reduced, Accelerated, Streamlined, Mapped, Documented, Evaluated, Redesigned\n\n4. CONCISENESS (conciseness)\n- Is length appropriate? Ideal: 1-2 lines (~15-25 English words)\n- Any redundant phrases? (\"in order to\" -> \"to\", \"was able to\" -> remove)\n- Does one bullet cram too much? If so, suggest splitting\n\n5. REDUNDANCY (redundancy)\n- Do any two bullets convey the same core message, metric, or outcome?\n- Examples: two bullets both mention the same time saving, both describe eliminating the same problem, both describe the same action differently\n- If redundant pair found, fail the WEAKER bullet (less specific, less quantified, or less JD-aligned)\n\n6. TECH LEVEL FIT (tech_level_fit)\n- Tech Level is \"{{ $('Route Projects').item.json.jdAnalysis.tech_level }}\"\n- If \"low\": Does the bullet lead with business outcome? Fail if a bullet's subject is a technology name (e.g. \"Built n8n workflow...\" is wrong for low).\n- If \"medium\": Technical detail is fine, but does it still include measurable impact?\n</checks>\n\n<output>\nReturn ONLY this JSON, no markdown fences, start with {:\n{\n  \"impact_sentences\": [\"<copy unchanged>\", \"<copy unchanged>\", \"<copy unchanged>\", \"<copy unchanged>\"],\n  \"qa_log\": [\n    {\"bullet\": 1, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"},\n    {\"bullet\": 2, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"},\n    {\"bullet\": 3, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"},\n    {\"bullet\": 4, \"status\": \"pass|fail\", \"failed_checks\": [], \"diagnosis\": \"\"}\n  ]\n}\nCopy all impact_sentences unchanged from input. Only qa_log reflects your judgment.\nfailed_checks should list dimension names: \"relevance\", \"quantified_impact\", \"action_verb\", \"conciseness\", \"redundancy\", \"tech_level_fit\"\n</output>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "9a549c77-39d5-478e-9578-ab8933fd3ce8",
+      "name": "AI - QA Review P3",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        47040,
+        36540
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "3cc5ddba-ab25-4d56-ab41-d406b78e1544",
+      "name": "Claude LM QA P3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        47112,
+        36764
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-continue",
+              "leftValue": "={{ $json.shouldContinue }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "92b43292-4d68-4aa1-a8d8-e1968d688aa6",
+      "name": "Check Loop P1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        48544,
+        34228
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You shorten resume bullet points slightly. Plain text only, no HTML tags.\n\n<sentences_too_long>\n{{ JSON.stringify($json.tooLongSentences) }}\n</sentences_too_long>\n\n<CRITICAL_REQUIREMENT>\nShorten each sentence to under 180 characters.\nMost sentences only need minor trimming â€” cut the least important words first, preserve core meaning.\n</CRITICAL_REQUIREMENT>\n\n<shortening_priority>\nRemove in this order, stopping as soon as the sentence is under 180 chars:\n1. Context/background phrases: \"for GreenTech Painting\", \"across the organization\"\n2. Redundant modifiers: \"comprehensive\", \"full-stack\", \"end-to-end\"\n3. Parenthetical lists: \"(customer management, room config...)\" â†’ summarize to count: \"6 modules\"\n4. Merge with slashes: \"iPad, Excel, and QuickBooks\" â†’ \"iPad/Excel/QuickBooks\"\n5. Abbreviate: \"development\" â†’ \"dev\", \"application\" â†’ \"app\"\n\nDo NOT remove tools, metrics, or outcome statements unless no other option remains.\n</shortening_priority>\n\n<examples>\nBEFORE (218 chars): \"Engineered SwiftUI + MVVM architecture with 6 core modules (customer management, room configuration, real-time estimate calculation, QBO OAuth sync, queue management, CoreData persistence) across 6 milestone cycles\"\nAFTER (172 chars): \"Engineered SwiftUI/MVVM architecture with 6 core modules including real-time estimate calculation, QBO OAuth sync, and CoreData persistence\"\n\nBEFORE (198 chars): \"Led end-to-end delivery of iOS quoting app for GreenTech Painting, reducing data entry from 3x to 1x across iPad/Excel/QuickBooks and eliminating manual transcription errors\"\nAFTER (127 chars): \"Delivered iOS quoting app reducing data entry from 3x to 1x across iPad/Excel/QuickBooks, eliminating transcription errors\"\n</examples>\n\nReturn ONLY valid JSON, no markdown fences:\n{\n  \"project_title\": \"{{ $json.projectData.project_title }}\",\n  \"project_date\": \"{{ $json.projectData.project_date }}\",\n  \"project_url\": \"{{ $json.projectData.project_url }}\",\n  \"original_name\": \"{{ $json.projectData.original_name }}\",\n  \"matched_skill\": \"{{ $json.projectData.matched_skill }}\",\n  \"impact_sentences\": [\"<under 180 chars>\", \"<under 180 chars>\", \"<under 180 chars>\", \"<under 180 chars>\"]\n}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "ee9528d1-e545-4e38-8eea-4e9a7c020ac1",
+      "name": "AI - Shorten P1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        48768,
+        34020
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 4000,
+          "temperature": 0.1
+        }
+      },
+      "id": "fef230c2-6354-4822-8d8e-663fb982d960",
+      "name": "Claude Shortener P1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        48840,
+        34244
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nconst content = input.output || input.text || '';\n\nconst checkLoopData = $('Check Loop P1').first().json || {};\nconst iteration = checkLoopData.iteration || 1;\nconst validSentences = checkLoopData.validSentences || [];\nconst validIndices = checkLoopData.validIndices || [];\nconst tooLongIndices = checkLoopData.tooLongIndices || [];\nconst originalProjectData = checkLoopData.projectData || {};\n\nlet projectData;\nlet jsonStr = content;\n\nif (content.includes('```json')) {\n  const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else if (content.includes('```')) {\n  const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) jsonStr = jsonMatch[0];\n}\n\ntry {\n  projectData = JSON.parse(jsonStr.trim());\n} catch (e) {\n  throw new Error('Failed to parse shortened sentences: ' + e.message);\n}\n\nconst shortenedSentences = projectData.impact_sentences || [];\n\n// Rebuild in original order using tracked indices\nconst totalCount = validSentences.length + shortenedSentences.length;\nconst merged = new Array(totalCount);\nfor (let i = 0; i < validIndices.length; i++) {\n  merged[validIndices[i]] = validSentences[i];\n}\nfor (let i = 0; i < tooLongIndices.length; i++) {\n  merged[tooLongIndices[i]] = shortenedSentences[i] || '';\n}\nprojectData.impact_sentences = merged.filter(s => s !== undefined);\n\nprojectData.project_title = originalProjectData.project_title || projectData.project_title;\nprojectData.project_date = originalProjectData.project_date || projectData.project_date;\nprojectData.project_url = originalProjectData.project_url || projectData.project_url;\nprojectData.original_name = originalProjectData.original_name || projectData.original_name;\nprojectData.matched_skill = originalProjectData.matched_skill || projectData.matched_skill;\n\nreturn {\n  json: {\n    projectData: projectData,\n    iteration: iteration,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "71b36f74-a273-463b-b7e1-ef38d5ebcd89",
+      "name": "Parse Shortened P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        49120,
+        34248
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-continue",
+              "leftValue": "={{ $json.shouldContinue }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "580e30b2-32cb-4d9e-81ae-0559e5a11054",
+      "name": "Check Loop P2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        48544,
+        35308
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You shorten resume bullet points slightly. Plain text only, no HTML tags.\n\n<sentences_too_long>\n{{ JSON.stringify($json.tooLongSentences) }}\n</sentences_too_long>\n\n<CRITICAL_REQUIREMENT>\nShorten each sentence to under 180 characters.\nMost sentences only need minor trimming â€” cut the least important words first, preserve core meaning.\n</CRITICAL_REQUIREMENT>\n\n<shortening_priority>\nRemove in this order, stopping as soon as the sentence is under 180 chars:\n0. NEVER remove outcome/impact phrases (metrics, time saved, errors eliminated, accuracy numbers). These are the highest-value content. Remove everything else first.\n1. Context/background phrases: \"for GreenTech Painting\", \"across the organization\"\n2. Redundant modifiers: \"comprehensive\", \"full-stack\", \"end-to-end\"\n3. Parenthetical lists: \"(customer management, room config...)\" â†’ summarize to count: \"6 modules\"\n4. Merge with slashes: \"iPad, Excel, and QuickBooks\" â†’ \"iPad/Excel/QuickBooks\"\n5. Abbreviate: \"development\" â†’ \"dev\", \"application\" â†’ \"app\"\n\nDo NOT remove tools, metrics, or outcome statements unless no other option remains.\n</shortening_priority>\n\n<examples>\nBEFORE (218 chars): \"Engineered SwiftUI + MVVM architecture with 6 core modules (customer management, room configuration, real-time estimate calculation, QBO OAuth sync, queue management, CoreData persistence) across 6 milestone cycles\"\nAFTER (172 chars): \"Engineered SwiftUI/MVVM architecture with 6 core modules including real-time estimate calculation, QBO OAuth sync, and CoreData persistence\"\n\nBEFORE (198 chars): \"Led end-to-end delivery of iOS quoting app for GreenTech Painting, reducing data entry from 3x to 1x across iPad/Excel/QuickBooks and eliminating manual transcription errors\"\nAFTER (127 chars): \"Delivered iOS quoting app reducing data entry from 3x to 1x across iPad/Excel/QuickBooks, eliminating transcription errors\"\n</examples>\n\nReturn ONLY valid JSON, no markdown fences:\n{\n  \"project_title\": \"{{ $json.projectData.project_title }}\",\n  \"project_date\": \"{{ $json.projectData.project_date }}\",\n  \"project_url\": \"{{ $json.projectData.project_url }}\",\n  \"original_name\": \"{{ $json.projectData.original_name }}\",\n  \"matched_skill\": \"{{ $json.projectData.matched_skill }}\",\n  \"impact_sentences\": [\"<under 180 chars>\", \"<under 180 chars>\", \"<under 180 chars>\", \"<under 180 chars>\"]\n}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "7e82e7f1-e2b3-4bcc-8ac0-32e49a22b1d6",
+      "name": "AI - Shorten P2",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        48768,
+        35124
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 4000,
+          "temperature": 0.1
+        }
+      },
+      "id": "f47f2129-1fb8-4eee-8d40-2cf0bb3ca2a4",
+      "name": "Claude Shortener P2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        48840,
+        35348
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nconst content = input.output || input.text || '';\n\nconst checkLoopData = $('Check Loop P2').first().json || {};\nconst iteration = checkLoopData.iteration || 1;\nconst validSentences = checkLoopData.validSentences || [];\nconst validIndices = checkLoopData.validIndices || [];\nconst tooLongIndices = checkLoopData.tooLongIndices || [];\nconst originalProjectData = checkLoopData.projectData || {};\n\nlet projectData;\nlet jsonStr = content;\n\nif (content.includes('```json')) {\n  const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else if (content.includes('```')) {\n  const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) jsonStr = jsonMatch[0];\n}\n\ntry {\n  projectData = JSON.parse(jsonStr.trim());\n} catch (e) {\n  throw new Error('Failed to parse shortened sentences: ' + e.message);\n}\n\nconst shortenedSentences = projectData.impact_sentences || [];\n\nconst totalCount = validSentences.length + shortenedSentences.length;\nconst merged = new Array(totalCount);\nfor (let i = 0; i < validIndices.length; i++) {\n  merged[validIndices[i]] = validSentences[i];\n}\nfor (let i = 0; i < tooLongIndices.length; i++) {\n  merged[tooLongIndices[i]] = shortenedSentences[i] || '';\n}\nprojectData.impact_sentences = merged.filter(s => s !== undefined);\n\nprojectData.project_title = originalProjectData.project_title || projectData.project_title;\nprojectData.project_date = originalProjectData.project_date || projectData.project_date;\nprojectData.project_url = originalProjectData.project_url || projectData.project_url;\nprojectData.original_name = originalProjectData.original_name || projectData.original_name;\nprojectData.matched_skill = originalProjectData.matched_skill || projectData.matched_skill;\n\nreturn {\n  json: {\n    projectData: projectData,\n    iteration: iteration,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "bd9169b8-1043-4ef6-86d9-a4457acd7419",
+      "name": "Parse Shortened P2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        49120,
+        35732
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-continue",
+              "leftValue": "={{ $json.shouldContinue }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "610b0ca1-4593-47a8-b01e-777415b7fe3e",
+      "name": "Check Loop P3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        48544,
+        36420
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You shorten resume bullet points slightly. Plain text only, no HTML tags.\n\n<sentences_too_long>\n{{ JSON.stringify($json.tooLongSentences) }}\n</sentences_too_long>\n\n<CRITICAL_REQUIREMENT>\nShorten each sentence to under 180 characters.\nMost sentences only need minor trimming â€” cut the least important words first, preserve core meaning.\n</CRITICAL_REQUIREMENT>\n\n<shortening_priority>\nRemove in this order, stopping as soon as the sentence is under 180 chars:\n0. NEVER remove outcome/impact phrases (metrics, time saved, errors eliminated, accuracy numbers). These are the highest-value content. Remove everything else first.\n1. Context/background phrases: \"for GreenTech Painting\", \"across the organization\"\n2. Redundant modifiers: \"comprehensive\", \"full-stack\", \"end-to-end\"\n3. Parenthetical lists: \"(customer management, room config...)\" â†’ summarize to count: \"6 modules\"\n4. Merge with slashes: \"iPad, Excel, and QuickBooks\" â†’ \"iPad/Excel/QuickBooks\"\n5. Abbreviate: \"development\" â†’ \"dev\", \"application\" â†’ \"app\"\n\nDo NOT remove tools, metrics, or outcome statements unless no other option remains.\n</shortening_priority>\n\n<examples>\nBEFORE (218 chars): \"Engineered SwiftUI + MVVM architecture with 6 core modules (customer management, room configuration, real-time estimate calculation, QBO OAuth sync, queue management, CoreData persistence) across 6 milestone cycles\"\nAFTER (172 chars): \"Engineered SwiftUI/MVVM architecture with 6 core modules including real-time estimate calculation, QBO OAuth sync, and CoreData persistence\"\n\nBEFORE (198 chars): \"Led end-to-end delivery of iOS quoting app for GreenTech Painting, reducing data entry from 3x to 1x across iPad/Excel/QuickBooks and eliminating manual transcription errors\"\nAFTER (127 chars): \"Delivered iOS quoting app reducing data entry from 3x to 1x across iPad/Excel/QuickBooks, eliminating transcription errors\"\n</examples>\n\nReturn ONLY valid JSON, no markdown fences:\n{\n  \"project_title\": \"{{ $json.projectData.project_title }}\",\n  \"project_date\": \"{{ $json.projectData.project_date }}\",\n  \"project_url\": \"{{ $json.projectData.project_url }}\",\n  \"original_name\": \"{{ $json.projectData.original_name }}\",\n  \"matched_skill\": \"{{ $json.projectData.matched_skill }}\",\n  \"impact_sentences\": [\"<under 180 chars>\", \"<under 180 chars>\", \"<under 180 chars>\", \"<under 180 chars>\"]\n}",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "442f6124-e243-4e55-aa31-5266617eaeb9",
+      "name": "AI - Shorten P3",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        48768,
+        36260
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 4000,
+          "temperature": 0.1
+        }
+      },
+      "id": "90ff354f-491d-4e67-831b-c95b9f661ba8",
+      "name": "Claude Shortener P3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        48840,
+        36484
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nconst content = input.output || input.text || '';\n\nconst checkLoopData = $('Check Loop P3').first().json || {};\nconst iteration = checkLoopData.iteration || 1;\nconst validSentences = checkLoopData.validSentences || [];\nconst validIndices = checkLoopData.validIndices || [];\nconst tooLongIndices = checkLoopData.tooLongIndices || [];\nconst originalProjectData = checkLoopData.projectData || {};\n\nlet projectData;\nlet jsonStr = content;\n\nif (content.includes('```json')) {\n  const match = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else if (content.includes('```')) {\n  const match = content.match(/```\\s*([\\s\\S]*?)\\s*```/);\n  if (match) jsonStr = match[1];\n} else {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) jsonStr = jsonMatch[0];\n}\n\ntry {\n  projectData = JSON.parse(jsonStr.trim());\n} catch (e) {\n  throw new Error('Failed to parse shortened sentences: ' + e.message);\n}\n\nconst shortenedSentences = projectData.impact_sentences || [];\n\nconst totalCount = validSentences.length + shortenedSentences.length;\nconst merged = new Array(totalCount);\nfor (let i = 0; i < validIndices.length; i++) {\n  merged[validIndices[i]] = validSentences[i];\n}\nfor (let i = 0; i < tooLongIndices.length; i++) {\n  merged[tooLongIndices[i]] = shortenedSentences[i] || '';\n}\nprojectData.impact_sentences = merged.filter(s => s !== undefined);\n\nprojectData.project_title = originalProjectData.project_title || projectData.project_title;\nprojectData.project_date = originalProjectData.project_date || projectData.project_date;\nprojectData.project_url = originalProjectData.project_url || projectData.project_url;\nprojectData.original_name = originalProjectData.original_name || projectData.original_name;\nprojectData.matched_skill = originalProjectData.matched_skill || projectData.matched_skill;\n\nreturn {\n  json: {\n    projectData: projectData,\n    iteration: iteration,\n    branch: 'projects'\n  }\n};"
+      },
+      "id": "d1b09c0f-e894-4b55-b563-445609e2d7f0",
+      "name": "Parse Shortened P3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        49120,
+        36616
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst projectsWithImpact = items\n  .map(item => item.json.optimizedProject)\n  .filter(p => p && p.impact_sentences && p.impact_sentences.length > 0)\n  .filter(p => p.project_title !== 'Unknown Project' && p.original_name !== '');\n\nreturn [{\n  json: {\n    projectsWithImpact: projectsWithImpact,\n    projectCount: projectsWithImpact.length,\n    branch: 'projects'\n  }\n}];"
+      },
+      "id": "59c09390-0919-4422-8a0e-78a9a0d0658d",
+      "name": "Aggregate Project Results1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        49408,
+        35524
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst previousData = $('Process Projects').first().json;\nlet projectsData;\n\ntry {\n  const content = response.output || response.text || '';\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    projectsData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (e) {\n  projectsData = { selected_projects: [] };\n}\n\nconst projectsMap = previousData.projectsMap || {};\nconst projectUrlsMap = previousData.projectUrlsMap || {};\n\nconst availableKeys = Object.keys(projectsMap);\n\nconst enrichedProjects = (projectsData.selected_projects || []).map(project => {\n  const fileName = project.file_name || '';\n  let matchedKey = '';\n  \n  let projectContent = projectsMap[fileName] || '';\n  if (projectContent) {\n    matchedKey = fileName;\n  }\n  \n  if (!projectContent) {\n    const normalizedFileName = fileName.toLowerCase().replace(/[\\s-]/g, '_').replace(/_+/g, '_');\n    for (const [key, value] of Object.entries(projectsMap)) {\n      const normalizedKey = key.toLowerCase().replace(/[\\s-]/g, '_').replace(/_+/g, '_');\n      if (normalizedKey === normalizedFileName || key.toLowerCase() === fileName.toLowerCase()) {\n        projectContent = value;\n        matchedKey = key;\n        break;\n      }\n    }\n  }\n  \n  return {\n    ...project,\n    projectContent: projectContent,\n    projectUrl: projectUrlsMap[matchedKey] || '',\n    matchedKey: matchedKey\n  };\n});\n\nconst staticData = $getWorkflowStaticData('global');\nconst batchId = Date.now().toString();\nstaticData.batchId = batchId;\nstaticData.expectedProjectCount = enrichedProjects.length;\nstaticData.projectResults = [];\n\n\n// ── Title & Date extraction (deterministic, no AI needed) ──\nfunction extractTitle(content) {\n  const lines = content.split('\\n');\n  let title = '';\n  for (const line of lines) {\n    if (line.startsWith('# ')) {\n      title = line.replace(/^#\\s+/, '').replace(/^Project Name:\\s*/i, '').trim();\n      break;\n    }\n  }\n  if (!title && lines.length > 0) title = lines[0].trim();\n  if (title.length > 55) {\n    title = title\n      .replace(/\\bApplication\\b/g, 'App')\n      .replace(/\\bRecommendation\\b/g, 'Rec.');\n  }\n  if (title.length > 55) title = title.substring(0, 52) + '...';\n  return title;\n}\n\nfunction extractDate(content) {\n  const lines = content.split('\\n');\n  if (lines.length >= 2) {\n    const line2 = lines[1].trim();\n    const m = line2.match(/^([A-Z][a-z]{2}\\s+\\d{4})\\s*[-\\u2013]\\s*([A-Z][a-z]{2}\\s+\\d{4}|Present)$/);\n    if (m) return m[1] + ' - ' + m[2];\n  }\n  return 'Not specified';\n}\n\nreturn enrichedProjects.map((project, i) => ({\n  json: {\n    jdAnalysis: previousData.jdAnalysis,\n    top3Skills: previousData.top3Skills,\n    currentProject: project,\n    projectContent: project.projectContent,\n    projectFileName: project.file_name,\n    projectTitle: extractTitle(project.projectContent || ''),\n    projectDate: extractDate(project.projectContent || ''),\n    projectUrl: project.projectUrl || '',\n    expectedProjectCount: enrichedProjects.length,\n    batchId: batchId,\n    branch: 'projects',\n    projectIndex: i,\n    debug: {\n      availableKeys: availableKeys,\n      requestedFileName: project.file_name,\n      matchedKey: project.matchedKey,\n      contentFound: !!project.projectContent,\n      contentLength: project.projectContent?.length || 0,\n      contentPreview: project.projectContent?.substring(0, 200) || 'EMPTY'\n    }\n  }\n}));"
+      },
+      "id": "8b8e6ecd-50d8-4124-9f31-b8a78dd3d611",
+      "name": "Parse Selected Projects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        46016,
+        35276
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.item.json;\nlet output = input.output || '';\noutput = output.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\nreturn { json: { ...input, output } };"
+      },
+      "id": "e29dbd16-f327-48b7-bef2-5454ac6f6ac7",
+      "name": "Clean Output P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        46816,
+        34172
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.item.json;\nlet output = input.output || '';\noutput = output.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\nreturn { json: { ...input, output } };"
+      },
+      "id": "6e12368c-9e35-4efa-8b98-80125fb16f6f",
+      "name": "Clean Output P2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        46816,
+        35276
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.item.json;\nlet output = input.output || '';\noutput = output.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\nreturn { json: { ...input, output } };"
+      },
+      "id": "05eeb6cc-34a0-46fe-abdb-cbdcedf05a43",
+      "name": "Clean Output P3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        46816,
+        36540
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "qa-loop-condition",
+              "leftValue": "={{ $json.shouldRevise }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "dc64bfea-7e55-4e53-a102-854e90f6c452",
+      "name": "IF Has Failures P1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        47616,
+        34100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const qaOutput = $input.item.json.output || '';\nlet cleaned = qaOutput.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\n\nlet parsed;\ntry {\n  const jsonMatch = cleaned.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);\n} catch(e) {\n  throw new Error('[Build Revision] Failed to parse QA output: ' + e.message);\n}\n\nconst qaLog = parsed.qa_log || [];\nconst sentences = parsed.impact_sentences || [];\n\n// Build revision block for failed bullets\nconst revisions = [];\nfor (const entry of qaLog) {\n  if (entry.status === 'fail') {\n    const idx = entry.bullet - 1;\n    revisions.push({\n      bullet_number: entry.bullet,\n      original: sentences[idx] || '',\n      failed_checks: entry.failed_checks || [],\n      diagnosis: entry.diagnosis || ''\n    });\n  }\n}\n\nlet revisionBlock = '';\nfor (const r of revisions) {\n  revisionBlock += `\\nBullet #${r.bullet_number} FAILED:`;\n  revisionBlock += `\\nOriginal: \"${r.original}\"`;\n  if (r.failed_checks.length > 0) {\n    revisionBlock += `\\nFailed dimensions: ${r.failed_checks.join(', ')}`;\n  }\n  revisionBlock += `\\nDiagnosis: ${r.diagnosis}\\n`;\n}\n\nreturn {\n  json: {\n    currentSentences: sentences,\n    revisionBlock: revisionBlock,\n    failedCount: revisions.length,\n    qaLog: qaLog\n  }\n};"
+      },
+      "id": "1aa1cd82-227a-4d07-a73a-83b6fa53ebd1",
+      "name": "Build Revision P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47904,
+        33828
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume bullet-point writer doing targeted revisions. Output structured JSON only.\n</role>\n\n<context>\nTarget Skills: {{ JSON.stringify($('Route Projects').item.json.currentProject.matched_skills) }}\nBusiness Goal: {{ $('Route Projects').item.json.jdAnalysis.business_goal }}\nJob Title: {{ $('Route Projects').item.json.jdAnalysis.job_title }}\nTop JD Skills: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.top_5_skills) }}\nATS Keywords: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.ats_keywords) }}\nCore Mission: {{ $('Route Projects').item.json.jdAnalysis.core_mission }}\nValue Proposition: {{ $('Route Projects').item.json.jdAnalysis.value_proposition }}\nKey Responsibilities: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.key_responsibilities) }}\nTech Level: {{ $('Route Projects').item.json.jdAnalysis.tech_level }}\nSeniority: intern\n</context>\n\n<project>\n{{ $('Route Projects').item.json.projectContent }}\n</project>\n\n<current_bullets>\n{{ JSON.stringify($json.currentSentences) }}\n</current_bullets>\n\n<revision>\nThe QA reviewer found problems with these bullets:\n{{ $json.revisionBlock }}\n\nRewrite ONLY the failed bullets following these principles:\n\n1. JD RELEVANCE — Use ATS Keywords and mirror Key Responsibilities phrasing. Use VERBATIM JD phrases where truthful. Align with Core Mission and Value Proposition.\n2. QUANTIFIED IMPACT — Add specific numbers, percentages, scale, time savings from the project data.\n3. ACTION VERB STRENGTH — Open with a strong verb (Engineered, Optimized, Automated, Developed, Implemented, Reduced, Accelerated, Streamlined, Mapped, Documented, Evaluated, Redesigned). NEVER use: helped, worked on, was responsible for, assisted, participated in, involved in, used, did.\n4. CONCISENESS — Keep each bullet 15-25 words. Use slashes (Python/SQL), abbreviations (app, dev, ML). Remove filler.\n5. NO REDUNDANCY — If diagnosis mentions redundancy, rewrite to cover a DIFFERENT facet of the project. Do not repeat the same metric or outcome as any other bullet.\n6. TECH LEVEL — Tech Level is \"{{ $('Route Projects').item.json.jdAnalysis.tech_level }}\". If \"low\", lead with business outcome, mention tools only as mechanism. If \"medium\", technical detail is fine but include measurable impact.\n\nKeep passing bullets unchanged. TRUTHFUL — only facts from the project data.\n</revision>\n\n<output>\nReturn ONLY this JSON, no markdown fences, start with {:\n{\n  \"impact_sentences\": [\"<bullet 1>\", \"<bullet 2>\", \"<bullet 3>\", \"<bullet 4>\"]\n}\nAll 4 bullets must be present. Keep passing bullets unchanged, replace only failed ones.\n</output>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "92536c02-80c7-4fc1-b0f0-15bd6b86c9e6",
+      "name": "AI - Revise Bullets P1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        48192,
+        33828
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "4791cb50-3f51-4c1a-8feb-6569c13a572d",
+      "name": "Claude LM Rev P1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        48264,
+        34052
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.item.json;\nlet output = input.output || '';\noutput = output.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\nreturn { json: { ...input, output } };"
+      },
+      "id": "75f02e98-487c-43e0-bd87-1e894d48fcb1",
+      "name": "Clean Revision P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48544,
+        33828
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "qa-loop-condition",
+              "leftValue": "={{ $json.shouldRevise }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8ea6004c-3b68-4b42-81c8-37b7edac4ef1",
+      "name": "IF Has Failures P2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        47616,
+        35204
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const qaOutput = $input.item.json.output || '';\nlet cleaned = qaOutput.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\n\nlet parsed;\ntry {\n  const jsonMatch = cleaned.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);\n} catch(e) {\n  throw new Error('[Build Revision] Failed to parse QA output: ' + e.message);\n}\n\nconst qaLog = parsed.qa_log || [];\nconst sentences = parsed.impact_sentences || [];\n\n// Build revision block for failed bullets\nconst revisions = [];\nfor (const entry of qaLog) {\n  if (entry.status === 'fail') {\n    const idx = entry.bullet - 1;\n    revisions.push({\n      bullet_number: entry.bullet,\n      original: sentences[idx] || '',\n      failed_checks: entry.failed_checks || [],\n      diagnosis: entry.diagnosis || ''\n    });\n  }\n}\n\nlet revisionBlock = '';\nfor (const r of revisions) {\n  revisionBlock += `\\nBullet #${r.bullet_number} FAILED:`;\n  revisionBlock += `\\nOriginal: \"${r.original}\"`;\n  if (r.failed_checks.length > 0) {\n    revisionBlock += `\\nFailed dimensions: ${r.failed_checks.join(', ')}`;\n  }\n  revisionBlock += `\\nDiagnosis: ${r.diagnosis}\\n`;\n}\n\nreturn {\n  json: {\n    currentSentences: sentences,\n    revisionBlock: revisionBlock,\n    failedCount: revisions.length,\n    qaLog: qaLog\n  }\n};"
+      },
+      "id": "1b6327b1-c01b-473a-8955-9ad800b92e3b",
+      "name": "Build Revision P2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47904,
+        34932
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume bullet-point writer doing targeted revisions. Output structured JSON only.\n</role>\n\n<context>\nTarget Skills: {{ JSON.stringify($('Route Projects').item.json.currentProject.matched_skills) }}\nBusiness Goal: {{ $('Route Projects').item.json.jdAnalysis.business_goal }}\nJob Title: {{ $('Route Projects').item.json.jdAnalysis.job_title }}\nTop JD Skills: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.top_5_skills) }}\nATS Keywords: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.ats_keywords) }}\nCore Mission: {{ $('Route Projects').item.json.jdAnalysis.core_mission }}\nValue Proposition: {{ $('Route Projects').item.json.jdAnalysis.value_proposition }}\nKey Responsibilities: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.key_responsibilities) }}\nTech Level: {{ $('Route Projects').item.json.jdAnalysis.tech_level }}\nSeniority: intern\n</context>\n\n<project>\n{{ $('Route Projects').item.json.projectContent }}\n</project>\n\n<current_bullets>\n{{ JSON.stringify($json.currentSentences) }}\n</current_bullets>\n\n<revision>\nThe QA reviewer found problems with these bullets:\n{{ $json.revisionBlock }}\n\nRewrite ONLY the failed bullets following these principles:\n\n1. JD RELEVANCE — Use ATS Keywords and mirror Key Responsibilities phrasing. Use VERBATIM JD phrases where truthful. Align with Core Mission and Value Proposition.\n2. QUANTIFIED IMPACT — Add specific numbers, percentages, scale, time savings from the project data.\n3. ACTION VERB STRENGTH — Open with a strong verb (Engineered, Optimized, Automated, Developed, Implemented, Reduced, Accelerated, Streamlined, Mapped, Documented, Evaluated, Redesigned). NEVER use: helped, worked on, was responsible for, assisted, participated in, involved in, used, did.\n4. CONCISENESS — Keep each bullet 15-25 words. Use slashes (Python/SQL), abbreviations (app, dev, ML). Remove filler.\n5. NO REDUNDANCY — If diagnosis mentions redundancy, rewrite to cover a DIFFERENT facet of the project. Do not repeat the same metric or outcome as any other bullet.\n6. TECH LEVEL — Tech Level is \"{{ $('Route Projects').item.json.jdAnalysis.tech_level }}\". If \"low\", lead with business outcome, mention tools only as mechanism. If \"medium\", technical detail is fine but include measurable impact.\n\nKeep passing bullets unchanged. TRUTHFUL — only facts from the project data.\n</revision>\n\n<output>\nReturn ONLY this JSON, no markdown fences, start with {:\n{\n  \"impact_sentences\": [\"<bullet 1>\", \"<bullet 2>\", \"<bullet 3>\", \"<bullet 4>\"]\n}\nAll 4 bullets must be present. Keep passing bullets unchanged, replace only failed ones.\n</output>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "c1bad8c2-8b09-4a6e-b71d-a05aa73f0bae",
+      "name": "AI - Revise Bullets P2",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        48192,
+        34932
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "401cf1bb-5448-456b-83a2-7900e6fd8a7a",
+      "name": "Claude LM Rev P2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        48264,
+        35156
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.item.json;\nlet output = input.output || '';\noutput = output.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\nreturn { json: { ...input, output } };"
+      },
+      "id": "86b99771-66a9-4646-aebb-b22f156b5fb7",
+      "name": "Clean Revision P2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48544,
+        34932
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "qa-loop-condition",
+              "leftValue": "={{ $json.shouldRevise }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ea9985aa-0c5d-4873-b85d-dd1f8a40c184",
+      "name": "IF Has Failures P3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        47616,
+        36468
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const qaOutput = $input.item.json.output || '';\nlet cleaned = qaOutput.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\n\nlet parsed;\ntry {\n  const jsonMatch = cleaned.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);\n} catch(e) {\n  throw new Error('[Build Revision] Failed to parse QA output: ' + e.message);\n}\n\nconst qaLog = parsed.qa_log || [];\nconst sentences = parsed.impact_sentences || [];\n\n// Build revision block for failed bullets\nconst revisions = [];\nfor (const entry of qaLog) {\n  if (entry.status === 'fail') {\n    const idx = entry.bullet - 1;\n    revisions.push({\n      bullet_number: entry.bullet,\n      original: sentences[idx] || '',\n      failed_checks: entry.failed_checks || [],\n      diagnosis: entry.diagnosis || ''\n    });\n  }\n}\n\nlet revisionBlock = '';\nfor (const r of revisions) {\n  revisionBlock += `\\nBullet #${r.bullet_number} FAILED:`;\n  revisionBlock += `\\nOriginal: \"${r.original}\"`;\n  if (r.failed_checks.length > 0) {\n    revisionBlock += `\\nFailed dimensions: ${r.failed_checks.join(', ')}`;\n  }\n  revisionBlock += `\\nDiagnosis: ${r.diagnosis}\\n`;\n}\n\nreturn {\n  json: {\n    currentSentences: sentences,\n    revisionBlock: revisionBlock,\n    failedCount: revisions.length,\n    qaLog: qaLog\n  }\n};"
+      },
+      "id": "ce1e1d0f-1441-45a8-b5fe-98c91473549e",
+      "name": "Build Revision P3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47904,
+        36068
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<role>\nYou are a resume bullet-point writer doing targeted revisions. Output structured JSON only.\n</role>\n\n<context>\nTarget Skills: {{ JSON.stringify($('Route Projects').item.json.currentProject.matched_skills) }}\nBusiness Goal: {{ $('Route Projects').item.json.jdAnalysis.business_goal }}\nJob Title: {{ $('Route Projects').item.json.jdAnalysis.job_title }}\nTop JD Skills: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.top_5_skills) }}\nATS Keywords: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.ats_keywords) }}\nCore Mission: {{ $('Route Projects').item.json.jdAnalysis.core_mission }}\nValue Proposition: {{ $('Route Projects').item.json.jdAnalysis.value_proposition }}\nKey Responsibilities: {{ JSON.stringify($('Route Projects').item.json.jdAnalysis.key_responsibilities) }}\nTech Level: {{ $('Route Projects').item.json.jdAnalysis.tech_level }}\nSeniority: intern\n</context>\n\n<project>\n{{ $('Route Projects').item.json.projectContent }}\n</project>\n\n<current_bullets>\n{{ JSON.stringify($json.currentSentences) }}\n</current_bullets>\n\n<revision>\nThe QA reviewer found problems with these bullets:\n{{ $json.revisionBlock }}\n\nRewrite ONLY the failed bullets following these principles:\n\n1. JD RELEVANCE — Use ATS Keywords and mirror Key Responsibilities phrasing. Use VERBATIM JD phrases where truthful. Align with Core Mission and Value Proposition.\n2. QUANTIFIED IMPACT — Add specific numbers, percentages, scale, time savings from the project data.\n3. ACTION VERB STRENGTH — Open with a strong verb (Engineered, Optimized, Automated, Developed, Implemented, Reduced, Accelerated, Streamlined, Mapped, Documented, Evaluated, Redesigned). NEVER use: helped, worked on, was responsible for, assisted, participated in, involved in, used, did.\n4. CONCISENESS — Keep each bullet 15-25 words. Use slashes (Python/SQL), abbreviations (app, dev, ML). Remove filler.\n5. NO REDUNDANCY — If diagnosis mentions redundancy, rewrite to cover a DIFFERENT facet of the project. Do not repeat the same metric or outcome as any other bullet.\n6. TECH LEVEL — Tech Level is \"{{ $('Route Projects').item.json.jdAnalysis.tech_level }}\". If \"low\", lead with business outcome, mention tools only as mechanism. If \"medium\", technical detail is fine but include measurable impact.\n\nKeep passing bullets unchanged. TRUTHFUL — only facts from the project data.\n</revision>\n\n<output>\nReturn ONLY this JSON, no markdown fences, start with {:\n{\n  \"impact_sentences\": [\"<bullet 1>\", \"<bullet 2>\", \"<bullet 3>\", \"<bullet 4>\"]\n}\nAll 4 bullets must be present. Keep passing bullets unchanged, replace only failed ones.\n</output>",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "fd58a05a-ccda-4f0b-8c14-be47f1fb260a",
+      "name": "AI - Revise Bullets P3",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        48192,
+        36068
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 20000,
+          "temperature": 0.7
+        }
+      },
+      "id": "a005622d-999d-4d69-83e0-ecf94564c416",
+      "name": "Claude LM Rev P3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        48264,
+        36292
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.item.json;\nlet output = input.output || '';\noutput = output.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\nreturn { json: { ...input, output } };"
+      },
+      "id": "5d9cfabd-0098-4819-bdeb-31f899d840b5",
+      "name": "Clean Revision P3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48544,
+        36068
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nconst output = input.output || '';\n\n// Parse QA Review output\nlet parsed = null;\ntry {\n  const cleaned = output.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\n  const jsonMatch = cleaned.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);\n} catch(e) {}\n\n// Determine QA round\nlet qa_round = 1;\ntry {\n  qa_round = $('Prep QA Loop P1').first().json.qa_round || 1;\n} catch(e) {\n  qa_round = 1;\n}\n\n// For round 2+: force-pass bullets that were NOT revised (code-level, not AI-level)\nlet revisedBullets = null;\nif (qa_round > 1) {\n  try {\n    revisedBullets = $('Prep QA Loop P1').first().json.revised_bullet_numbers || [];\n  } catch(e) {\n    revisedBullets = [];\n  }\n}\n\nconst MAX_CHARS = 180;\n\nif (parsed && parsed.impact_sentences && parsed.qa_log) {\n  for (let i = 0; i < parsed.qa_log.length; i++) {\n    const bulletNum = parsed.qa_log[i].bullet || (i + 1);\n    const sentence = parsed.impact_sentences[i] || '';\n\n    // Round 2+: force pass on non-revised bullets\n    if (revisedBullets && !revisedBullets.includes(bulletNum)) {\n      parsed.qa_log[i].status = 'pass';\n      parsed.qa_log[i].failed_checks = [];\n      parsed.qa_log[i].diagnosis = '';\n      continue; // skip char check too - it passed before\n    }\n\n    // Char count check (applies to all reviewed bullets)\n    if (sentence.length > MAX_CHARS) {\n      parsed.qa_log[i].status = 'fail';\n      if (!parsed.qa_log[i].failed_checks.includes('conciseness')) {\n        parsed.qa_log[i].failed_checks.push('conciseness');\n      }\n      const charMsg = `Over ${MAX_CHARS} char limit (${sentence.length} chars, need to cut ${sentence.length - MAX_CHARS}).`;\n      parsed.qa_log[i].diagnosis = parsed.qa_log[i].diagnosis\n        ? parsed.qa_log[i].diagnosis + ' ' + charMsg\n        : charMsg;\n    }\n  }\n  input.output = JSON.stringify(parsed);\n}\n\nconst hasFailure = (input.output || '').includes('\"fail\"');\nconst MAX_QA_ROUNDS = 3;\nconst shouldRevise = hasFailure && qa_round < MAX_QA_ROUNDS;\n\nreturn {\n  json: {\n    ...input,\n    qa_round: qa_round,\n    shouldRevise: shouldRevise,\n    hasFailure: hasFailure\n  }\n};"
+      },
+      "id": "740382d1-3c02-41d6-be08-a139257eeba4",
+      "name": "QA Gate P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47392,
+        34100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nconst output = input.output || '';\n\nlet parsed = null;\ntry {\n  const cleaned = output.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\n  const jsonMatch = cleaned.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);\n} catch(e) {}\n\nlet qa_round = 1;\ntry {\n  qa_round = $('Prep QA Loop P2').first().json.qa_round || 1;\n} catch(e) {\n  qa_round = 1;\n}\n\nlet revisedBullets = null;\nif (qa_round > 1) {\n  try {\n    revisedBullets = $('Prep QA Loop P2').first().json.revised_bullet_numbers || [];\n  } catch(e) {\n    revisedBullets = [];\n  }\n}\n\nconst MAX_CHARS = 180;\n\nif (parsed && parsed.impact_sentences && parsed.qa_log) {\n  for (let i = 0; i < parsed.qa_log.length; i++) {\n    const bulletNum = parsed.qa_log[i].bullet || (i + 1);\n    const sentence = parsed.impact_sentences[i] || '';\n\n    if (revisedBullets && !revisedBullets.includes(bulletNum)) {\n      parsed.qa_log[i].status = 'pass';\n      parsed.qa_log[i].failed_checks = [];\n      parsed.qa_log[i].diagnosis = '';\n      continue;\n    }\n\n    if (sentence.length > MAX_CHARS) {\n      parsed.qa_log[i].status = 'fail';\n      if (!parsed.qa_log[i].failed_checks.includes('conciseness')) {\n        parsed.qa_log[i].failed_checks.push('conciseness');\n      }\n      const charMsg = `Over ${MAX_CHARS} char limit (${sentence.length} chars, need to cut ${sentence.length - MAX_CHARS}).`;\n      parsed.qa_log[i].diagnosis = parsed.qa_log[i].diagnosis\n        ? parsed.qa_log[i].diagnosis + ' ' + charMsg\n        : charMsg;\n    }\n  }\n  input.output = JSON.stringify(parsed);\n}\n\nconst hasFailure = (input.output || '').includes('\"fail\"');\nconst MAX_QA_ROUNDS = 3;\nconst shouldRevise = hasFailure && qa_round < MAX_QA_ROUNDS;\n\nreturn {\n  json: {\n    ...input,\n    qa_round: qa_round,\n    shouldRevise: shouldRevise,\n    hasFailure: hasFailure\n  }\n};"
+      },
+      "id": "d7625f51-6f6c-4496-bcd1-44b21e1deee0",
+      "name": "QA Gate P2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47392,
+        35204
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nconst output = input.output || '';\n\nlet parsed = null;\ntry {\n  const cleaned = output.replace(/```json\\n?/g, '').replace(/\\n?```/g, '').trim();\n  const jsonMatch = cleaned.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);\n} catch(e) {}\n\nlet qa_round = 1;\ntry {\n  qa_round = $('Prep QA Loop P3').first().json.qa_round || 1;\n} catch(e) {\n  qa_round = 1;\n}\n\nlet revisedBullets = null;\nif (qa_round > 1) {\n  try {\n    revisedBullets = $('Prep QA Loop P3').first().json.revised_bullet_numbers || [];\n  } catch(e) {\n    revisedBullets = [];\n  }\n}\n\nconst MAX_CHARS = 180;\n\nif (parsed && parsed.impact_sentences && parsed.qa_log) {\n  for (let i = 0; i < parsed.qa_log.length; i++) {\n    const bulletNum = parsed.qa_log[i].bullet || (i + 1);\n    const sentence = parsed.impact_sentences[i] || '';\n\n    if (revisedBullets && !revisedBullets.includes(bulletNum)) {\n      parsed.qa_log[i].status = 'pass';\n      parsed.qa_log[i].failed_checks = [];\n      parsed.qa_log[i].diagnosis = '';\n      continue;\n    }\n\n    if (sentence.length > MAX_CHARS) {\n      parsed.qa_log[i].status = 'fail';\n      if (!parsed.qa_log[i].failed_checks.includes('conciseness')) {\n        parsed.qa_log[i].failed_checks.push('conciseness');\n      }\n      const charMsg = `Over ${MAX_CHARS} char limit (${sentence.length} chars, need to cut ${sentence.length - MAX_CHARS}).`;\n      parsed.qa_log[i].diagnosis = parsed.qa_log[i].diagnosis\n        ? parsed.qa_log[i].diagnosis + ' ' + charMsg\n        : charMsg;\n    }\n  }\n  input.output = JSON.stringify(parsed);\n}\n\nconst hasFailure = (input.output || '').includes('\"fail\"');\nconst MAX_QA_ROUNDS = 3;\nconst shouldRevise = hasFailure && qa_round < MAX_QA_ROUNDS;\n\nreturn {\n  json: {\n    ...input,\n    qa_round: qa_round,\n    shouldRevise: shouldRevise,\n    hasFailure: hasFailure\n  }\n};"
+      },
+      "id": "dbf68f30-9e18-4104-8030-8b0d1e2d9436",
+      "name": "QA Gate P3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        47392,
+        36468
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nlet prevRound = 1;\ntry {\n  prevRound = $('QA Gate P1').first().json.qa_round || 1;\n} catch(e) {\n  prevRound = 1;\n}\nreturn {\n  json: {\n    ...input,\n    qa_round: prevRound + 1\n  }\n};"
+      },
+      "id": "824227f2-60c0-474b-bf12-343a8226c971",
+      "name": "Prep QA Loop P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48832,
+        33828
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nlet prevRound = 1;\ntry {\n  prevRound = $('QA Gate P2').first().json.qa_round || 1;\n} catch(e) {\n  prevRound = 1;\n}\nreturn {\n  json: {\n    ...input,\n    qa_round: prevRound + 1\n  }\n};"
+      },
+      "id": "1a714105-a82c-4511-b803-29b56ddd6d0b",
+      "name": "Prep QA Loop P2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48832,
+        34932
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nlet prevRound = 1;\ntry {\n  prevRound = $('Prep QA Loop P3').first().json.qa_round || 1;\n} catch(e) {\n  prevRound = 1;\n}\nreturn {\n  json: {\n    ...input,\n    qa_round: prevRound + 1\n  }\n};"
+      },
+      "id": "b29cd130-de66-4e88-9e5c-76a8419dce7c",
+      "name": "Prep QA Loop P3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48832,
+        36068
+      ]
+    }
+  ],
+  "connections": {
+    "AI - Extract Master Courses": {
+      "main": [
+        [
+          {
+            "node": "Parse Master Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Analyze JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Extract Master Courses",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Generate Skills (Step 1)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Select Top 3 Projects",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Extract Bachelor Courses",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Template File": {
+      "main": [
+        [
+          {
+            "node": "Generate Resume HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Data": {
+      "main": [
+        [
+          {
+            "node": "Read Template File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Results": {
+      "main": [
+        [
+          {
+            "node": "Combine All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Skills & Projects": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Courses": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Select Top 3 Projects": {
+      "main": [
+        [
+          {
+            "node": "Parse Selected Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Projects": {
+      "main": [
+        [
+          {
+            "node": "AI - Select Top 3 Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Project Files": {
+      "main": [
+        [
+          {
+            "node": "Process Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - Skills Shortener": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Shorten Skills Lines",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Skills": {
+      "main": [
+        [
+          {
+            "node": "Merge Skills & Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Shortened Skills": {
+      "main": [
+        [
+          {
+            "node": "Validate Skills Char Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Shorten Skills Lines": {
+      "main": [
+        [
+          {
+            "node": "Parse Shortened Skills",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Skills Loop": {
+      "main": [
+        [
+          {
+            "node": "AI - Shorten Skills Lines",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Skills",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Skills Char Count": {
+      "main": [
+        [
+          {
+            "node": "Check Skills Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Generated Skills": {
+      "main": [
+        [
+          {
+            "node": "Refine Skills (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Generate Skills (Step 1)": {
+      "main": [
+        [
+          {
+            "node": "Parse Generated Skills",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Skills": {
+      "main": [
+        [
+          {
+            "node": "AI - Generate Skills (Step 1)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Skills File": {
+      "main": [
+        [
+          {
+            "node": "Process Skills",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Bachelor Courses": {
+      "main": [
+        [
+          {
+            "node": "Merge Courses",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "AI - Extract Bachelor Courses": {
+      "main": [
+        [
+          {
+            "node": "Parse Bachelor Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Bachelor Courses": {
+      "main": [
+        [
+          {
+            "node": "AI - Extract Bachelor Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Bachelor Courses File": {
+      "main": [
+        [
+          {
+            "node": "Process Bachelor Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Master Courses": {
+      "main": [
+        [
+          {
+            "node": "Merge Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Master Courses": {
+      "main": [
+        [
+          {
+            "node": "AI - Extract Master Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Master Courses File": {
+      "main": [
+        [
+          {
+            "node": "Process Master Courses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JD Analysis": {
+      "main": [
+        [
+          {
+            "node": "Read Project Files",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Skills File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Bachelor Courses File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Master Courses File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Analyze JD": {
+      "main": [
+        [
+          {
+            "node": "Parse JD Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - JD Analysis": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Analyze JD",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refine Skills (Code)": {
+      "main": [
+        [
+          {
+            "node": "Validate Skills Char Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LM Gen P2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Generate Bullets P2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Generate Bullets P2": {
+      "main": [
+        [
+          {
+            "node": "Clean Output P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Written Impact P2": {
+      "main": [
+        [
+          {
+            "node": "Validate Char Count P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Project P2": {
+      "main": [
+        [
+          {
+            "node": "Wait For All Projects",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Validate Char Count P2": {
+      "main": [
+        [
+          {
+            "node": "Check Loop P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Generate Bullets P1": {
+      "main": [
+        [
+          {
+            "node": "Clean Output P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LM Gen P1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Generate Bullets P1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Written Impact P1": {
+      "main": [
+        [
+          {
+            "node": "Validate Char Count P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Char Count P1": {
+      "main": [
+        [
+          {
+            "node": "Check Loop P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Project P1": {
+      "main": [
+        [
+          {
+            "node": "Wait For All Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Generate Bullets P3": {
+      "main": [
+        [
+          {
+            "node": "Clean Output P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LM Gen P3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Generate Bullets P3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Written Impact P3": {
+      "main": [
+        [
+          {
+            "node": "Validate Char Count P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Char Count P3": {
+      "main": [
+        [
+          {
+            "node": "Check Loop P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Project P3": {
+      "main": [
+        [
+          {
+            "node": "Wait For All Projects",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Route Projects": {
+      "main": [
+        [
+          {
+            "node": "AI - Generate Bullets P1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI - Generate Bullets P2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI - Generate Bullets P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For All Projects": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Project Results1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - QA Review P1": {
+      "main": [
+        [
+          {
+            "node": "QA Gate P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LM QA P1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - QA Review P1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - QA Review P2": {
+      "main": [
+        [
+          {
+            "node": "QA Gate P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LM QA P2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - QA Review P2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - QA Review P3": {
+      "main": [
+        [
+          {
+            "node": "QA Gate P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LM QA P3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - QA Review P3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Loop P1": {
+      "main": [
+        [
+          {
+            "node": "AI - Shorten P1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Project P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Shorten P1": {
+      "main": [
+        [
+          {
+            "node": "Parse Shortened P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Shortener P1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Shorten P1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Shortened P1": {
+      "main": [
+        [
+          {
+            "node": "Validate Char Count P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Loop P2": {
+      "main": [
+        [
+          {
+            "node": "AI - Shorten P2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Project P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Shorten P2": {
+      "main": [
+        [
+          {
+            "node": "Parse Shortened P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Shortener P2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Shorten P2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Shortened P2": {
+      "main": [
+        [
+          {
+            "node": "Validate Char Count P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Loop P3": {
+      "main": [
+        [
+          {
+            "node": "AI - Shorten P3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Project P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Shorten P3": {
+      "main": [
+        [
+          {
+            "node": "Parse Shortened P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Shortener P3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Shorten P3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Shortened P3": {
+      "main": [
+        [
+          {
+            "node": "Validate Char Count P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Project Results1": {
+      "main": [
+        [
+          {
+            "node": "Merge Skills & Projects",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Parse Selected Projects": {
+      "main": [
+        [
+          {
+            "node": "Route Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Output P1": {
+      "main": [
+        [
+          {
+            "node": "AI - QA Review P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Output P2": {
+      "main": [
+        [
+          {
+            "node": "AI - QA Review P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Output P3": {
+      "main": [
+        [
+          {
+            "node": "AI - QA Review P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Has Failures P1": {
+      "main": [
+        [
+          {
+            "node": "Build Revision P1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Written Impact P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Revision P1": {
+      "main": [
+        [
+          {
+            "node": "AI - Revise Bullets P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Revise Bullets P1": {
+      "main": [
+        [
+          {
+            "node": "Clean Revision P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LM Rev P1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Revise Bullets P1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Revision P1": {
+      "main": [
+        [
+          {
+            "node": "Prep QA Loop P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Has Failures P2": {
+      "main": [
+        [
+          {
+            "node": "Build Revision P2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Written Impact P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Revision P2": {
+      "main": [
+        [
+          {
+            "node": "AI - Revise Bullets P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Revise Bullets P2": {
+      "main": [
+        [
+          {
+            "node": "Clean Revision P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LM Rev P2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Revise Bullets P2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Revision P2": {
+      "main": [
+        [
+          {
+            "node": "Prep QA Loop P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Has Failures P3": {
+      "main": [
+        [
+          {
+            "node": "Build Revision P3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Written Impact P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Revision P3": {
+      "main": [
+        [
+          {
+            "node": "AI - Revise Bullets P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Revise Bullets P3": {
+      "main": [
+        [
+          {
+            "node": "Clean Revision P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LM Rev P3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI - Revise Bullets P3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Revision P3": {
+      "main": [
+        [
+          {
+            "node": "Prep QA Loop P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA Gate P1": {
+      "main": [
+        [
+          {
+            "node": "IF Has Failures P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA Gate P2": {
+      "main": [
+        [
+          {
+            "node": "IF Has Failures P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA Gate P3": {
+      "main": [
+        [
+          {
+            "node": "IF Has Failures P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep QA Loop P1": {
+      "main": [
+        [
+          {
+            "node": "AI - QA Review P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep QA Loop P2": {
+      "main": [
+        [
+          {
+            "node": "AI - QA Review P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep QA Loop P3": {
+      "main": [
+        [
+          {
+            "node": "AI - QA Review P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1875c354e68add66bfcb88b2f89ad58e5496268bf95948e7520bbb6eb498bbed"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        27712,
+        22244
+      ],
+      "id": "execute-workflow-trigger-001",
+      "name": "When Called by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data from calling workflow\nconst inputData = $input.first().json;\nconst jobDescription = inputData.jobDescription || inputData['Job Description'] || '';\n\n// For testing purposes, we ignore the JD and return a pre-made resume\n// This is just a test sub-workflow to demonstrate the HTML+CSS resume output\n\nreturn [{\n  json: {\n    jobDescription: jobDescription,\n    message: 'Generating test resume with HTML+CSS'\n  }\n}];"
+      },
+      "id": "validate-input-001",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        27936,
+        22244
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// This is a test sub-workflow that returns a pre-made HTML+CSS resume\n// Used to test the cover letter generator workflow\n\nconst resumeHtml = `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Resume - Your Name</title>\n  <style>\n    @page {\n      size: Letter;\n      margin: 0.5in 0.75in;\n    }\n\n    * {\n      margin: 0;\n      padding: 0;\n      box-sizing: border-box;\n    }\n\n    body {\n      font-family: 'Calibri', 'Arial', sans-serif;\n      font-size: 11pt;\n      line-height: 1.4;\n      color: #333;\n      background: white;\n    }\n\n    .page {\n      max-width: 8.5in;\n      margin: 0 auto;\n      padding: 20px;\n    }\n\n    /* Header */\n    .header {\n      text-align: center;\n      margin-bottom: 20px;\n      border-bottom: 2px solid #2c3e50;\n      padding-bottom: 10px;\n    }\n\n    .header h1 {\n      font-size: 24pt;\n      font-weight: bold;\n      color: #2c3e50;\n      margin-bottom: 8px;\n    }\n\n    .contact {\n      font-size: 10pt;\n      color: #555;\n    }\n\n    .contact a {\n      color: #2980b9;\n      text-decoration: none;\n    }\n\n    /* Section */\n    .section {\n      margin-bottom: 18px;\n    }\n\n    .section-title {\n      font-size: 13pt;\n      font-weight: bold;\n      color: #2c3e50;\n      text-transform: uppercase;\n      border-bottom: 1.5px solid #34495e;\n      margin-bottom: 10px;\n      padding-bottom: 3px;\n    }\n\n    /* Summary */\n    .summary {\n      font-size: 10.5pt;\n      line-height: 1.5;\n      text-align: justify;\n    }\n\n    /* Skills */\n    .skills-grid {\n      display: grid;\n      grid-template-columns: auto 1fr;\n      gap: 8px;\n      font-size: 10.5pt;\n    }\n\n    .skill-category {\n      font-weight: bold;\n      color: #2c3e50;\n    }\n\n    .skill-list {\n      color: #555;\n    }\n\n    /* Experience & Education */\n    .entry {\n      margin-bottom: 14px;\n    }\n\n    .entry-header {\n      display: flex;\n      justify-content: space-between;\n      align-items: baseline;\n      margin-bottom: 4px;\n    }\n\n    .entry-title {\n      font-weight: bold;\n      font-size: 11pt;\n      color: #2c3e50;\n    }\n\n    .entry-subtitle {\n      font-style: italic;\n      color: #555;\n      font-size: 10.5pt;\n    }\n\n    .entry-period {\n      font-size: 10pt;\n      color: #7f8c8d;\n      white-space: nowrap;\n    }\n\n    .entry ul {\n      margin-left: 20px;\n      margin-top: 4px;\n    }\n\n    .entry li {\n      margin-bottom: 3px;\n      font-size: 10.5pt;\n      line-height: 1.4;\n    }\n\n    /* Projects */\n    .project {\n      margin-bottom: 10px;\n    }\n\n    .project-name {\n      font-weight: bold;\n      color: #2c3e50;\n      font-size: 10.5pt;\n    }\n\n    .project-desc {\n      font-size: 10pt;\n      color: #555;\n      margin-left: 15px;\n    }\n\n    /* Bold highlights */\n    b, strong {\n      color: #2c3e50;\n      font-weight: 600;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"page\">\n    <!-- Header -->\n    <div class=\"header\">\n      <h1>Your Name</h1>\n      <div class=\"contact\">\n        San Francisco, CA | \n        (123) 456-7890 | \n        <a href=\"mailto:sam.guan@example.com\">sam.guan@example.com</a> | \n        <a href=\"https://linkedin.com/in/samguan\" target=\"_blank\">LinkedIn</a> | \n        <a href=\"https://github.com/samguan\" target=\"_blank\">GitHub</a>\n      </div>\n    </div>\n\n    <!-- Summary -->\n    <div class=\"section\">\n      <div class=\"section-title\">Professional Summary</div>\n      <div class=\"summary\">\n        Data Analyst with 2+ years of experience leveraging Python, SQL, and visualization tools to drive business insights and optimize operations. Proven track record of improving customer retention by 25% and reducing data processing time by 40%. Passionate about turning complex data into actionable strategies that create measurable business impact.\n      </div>\n    </div>\n\n    <!-- Skills -->\n    <div class=\"section\">\n      <div class=\"section-title\">Technical Skills</div>\n      <div class=\"skills-grid\">\n        <div class=\"skill-category\">Programming:</div>\n        <div class=\"skill-list\">Python (Pandas, NumPy, scikit-learn), SQL (PostgreSQL, MySQL), R</div>\n        \n        <div class=\"skill-category\">Data Analysis:</div>\n        <div class=\"skill-list\">Statistical Modeling, A/B Testing, Predictive Analytics, Machine Learning</div>\n        \n        <div class=\"skill-category\">Visualization:</div>\n        <div class=\"skill-list\">Tableau, Power BI, Matplotlib, Seaborn, Looker</div>\n        \n        <div class=\"skill-category\">Tools:</div>\n        <div class=\"skill-list\">Git, Docker, Jupyter, AWS, Snowflake, DBT, Excel</div>\n      </div>\n    </div>\n\n    <!-- Experience -->\n    <div class=\"section\">\n      <div class=\"section-title\">Professional Experience</div>\n      \n      <div class=\"entry\">\n        <div class=\"entry-header\">\n          <div>\n            <div class=\"entry-title\">Data Analyst</div>\n            <div class=\"entry-subtitle\">TechStart Inc.</div>\n          </div>\n          <div class=\"entry-period\">June 2023 - Present</div>\n        </div>\n        <ul>\n          <li>Analyzed customer behavior data using <b>Python</b> and <b>SQL</b>, identifying key churn indicators that improved retention by <b>25%</b></li>\n          <li>Built automated reporting dashboards in <b>Tableau</b>, reducing manual reporting time by <b>15 hours/week</b> for executive team</li>\n          <li>Collaborated with product team to design and implement <b>A/B testing framework</b>, optimizing feature rollouts across 50K+ users</li>\n          <li>Optimized SQL queries and data pipelines, reducing processing time by <b>40%</b> and improving data freshness for real-time analytics</li>\n        </ul>\n      </div>\n\n      <div class=\"entry\">\n        <div class=\"entry-header\">\n          <div>\n            <div class=\"entry-title\">Data Science Intern</div>\n            <div class=\"entry-subtitle\">FinanceCorp</div>\n          </div>\n          <div class=\"entry-period\">June 2022 - August 2022</div>\n        </div>\n        <ul>\n          <li>Developed <b>predictive models</b> for customer churn using <b>scikit-learn</b>, achieving <b>0.84 AUC</b> and identifying high-risk segments</li>\n          <li>Created data visualizations for executive presentations, translating complex analytics into actionable insights for C-suite</li>\n          <li>Processed and cleaned <b>1M+ records</b> of financial transaction data, implementing data quality checks that reduced errors by <b>30%</b></li>\n        </ul>\n      </div>\n    </div>\n\n    <!-- Education -->\n    <div class=\"section\">\n      <div class=\"section-title\">Education</div>\n      \n      <div class=\"entry\">\n        <div class=\"entry-header\">\n          <div>\n            <div class=\"entry-title\">Master of Science in Data Science</div>\n            <div class=\"entry-subtitle\">University of Example | GPA: 3.9/4.0</div>\n          </div>\n          <div class=\"entry-period\">Sept 2021 - May 2023</div>\n        </div>\n        <div style=\"margin-left: 15px; margin-top: 4px; font-size: 10pt; color: #555;\">\n          Relevant Coursework: Machine Learning, Deep Learning, Statistical Methods, Data Mining, Big Data Analytics\n        </div>\n      </div>\n\n      <div class=\"entry\">\n        <div class=\"entry-header\">\n          <div>\n            <div class=\"entry-title\">Bachelor of Science in Computer Science</div>\n            <div class=\"entry-subtitle\">University of Example | GPA: 3.8/4.0</div>\n          </div>\n          <div class=\"entry-period\">Sept 2017 - May 2021</div>\n        </div>\n        <div style=\"margin-left: 15px; margin-top: 4px; font-size: 10pt; color: #555;\">\n          Relevant Coursework: Data Structures, Algorithms, Database Systems, Linear Algebra, Statistics\n        </div>\n      </div>\n    </div>\n\n    <!-- Projects -->\n    <div class=\"section\">\n      <div class=\"section-title\">Projects</div>\n      \n      <div class=\"project\">\n        <div class=\"project-name\">Customer Segmentation Analysis</div>\n        <div class=\"project-desc\">\n          Performed clustering analysis on <b>500K customer records</b> using K-means and hierarchical methods, identifying 5 distinct segments that led to targeted marketing campaigns and <b>35% increase in ROI</b>\n        </div>\n      </div>\n\n      <div class=\"project\">\n        <div class=\"project-name\">Predictive Maintenance System</div>\n        <div class=\"project-desc\">\n          Built ML model using <b>Random Forest</b> to predict equipment failures with <b>92% accuracy</b>, reducing unplanned downtime by <b>30%</b> and implementing real-time monitoring dashboard\n        </div>\n      </div>\n\n      <div class=\"project\">\n        <div class=\"project-name\">Sales Forecasting Dashboard</div>\n        <div class=\"project-desc\">\n          Created interactive <b>Tableau dashboard</b> for sales forecasting using ARIMA models, automating weekly reports for 10+ stakeholders and improving forecast accuracy by <b>20%</b>\n        </div>\n      </div>\n    </div>\n  </div>\n</body>\n</html>`;\n\nconst fileName = 'Resume_Sam_Guan_Test';\n\nreturn [{\n  json: {\n    resumeData: {\n      name: 'Your Name',\n      contact: {\n        email: 'sam.guan@example.com',\n        phone: '(123) 456-7890',\n        location: 'San Francisco, CA'\n      }\n    },\n    resumeHtml: resumeHtml,\n    fileName: fileName,\n    isTestResume: true\n  },\n  binary: {\n    resume: await this.helpers.prepareBinaryData(\n      Buffer.from(resumeHtml, 'utf-8'),\n      `${fileName}.html`,\n      'text/html; charset=utf-8'\n    )\n  }\n}];"
+      },
+      "id": "generate-test-resume-001",
+      "name": "Generate Test Resume HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        28160,
+        22244
+      ]
+    }
+  ],
+  "connections": {
+    "When Called by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Generate Test Resume HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "resume-generator-simple-instance"
+  },
+  "name": "Resume Generator (Simple)",
+  "tags": []
+}

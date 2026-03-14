@@ -1,0 +1,127 @@
+{
+  "name": "JD to Google Sheets Saver",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Job Description Saver",
+        "formDescription": "Save job descriptions to Google Sheets with date tracking",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Job Description",
+              "fieldType": "textarea",
+              "placeholder": "Paste the full job description here...",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c9b9c7b2-2137-453e-b27d-c75a1b90c53e",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        192,
+        544
+      ],
+      "webhookId": "f078de5c-2af5-4e44-83ea-e3abd67b07cb"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get form data\nconst formData = $input.first().json;\nconst jobDescription = formData['Job Description'] || '';\n\n// Get current date using Luxon\nconst now = DateTime.now();\nconst dateISO = now.toISODate();\nconst dateFormatted = now.toFormat('MMMM d, yyyy');\nconst timestamp = now.toISO();\n\n// Auto-extract information from job description\nconst lines = jobDescription.split('\\n').filter(l => l.trim());\nlet companyName = 'Unknown';\nlet jobTitle = 'Unknown';\nlet location = '';\nlet salaryRange = '';\n\n// Extract from first few lines\nfor (let i = 0; i < Math.min(10, lines.length); i++) {\n  const line = lines[i].trim();\n  \n  // Company name detection\n  if (i < 3 && line.length > 2 && line.length < 100) {\n    if (line.match(/\\b(company|inc\\.|ltd\\.|llc|corp\\.?)\\b/i)) {\n      companyName = line;\n    }\n  }\n  \n  // Job title (usually first line)\n  if (i === 0 && line.length > 2 && jobTitle === 'Unknown') {\n    jobTitle = line;\n  }\n  \n  // Location\n  if (line.match(/location:/i)) {\n    location = line.replace(/location:/i, '').trim();\n  }\n  \n  // Salary\n  if (line.match(/\\$[\\d,]+|salary/i)) {\n    salaryRange = line.substring(0, 100);\n  }\n}\n\n// Return formatted record for Google Sheets\nreturn [{\n  json: {\n    dateSubmitted: dateISO,\n    dateFormatted: dateFormatted,\n    timestamp: timestamp,\n    companyName: companyName,\n    jobTitle: jobTitle,\n    location: location,\n    salaryRange: salaryRange,\n    jobUrl: '',\n    jobDescription: jobDescription,\n    status: 'New',\n    notes: ''\n  }\n}];"
+      },
+      "id": "b5387460-ed5f-48e0-a85c-665092afc834",
+      "name": "Extract Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dateSubmitted": "={{ $json.dateSubmitted }}",
+            "dateFormatted": "={{ $json.dateFormatted }}",
+            "timestamp": "={{ $json.timestamp }}",
+            "companyName": "={{ $json.companyName }}",
+            "jobTitle": "={{ $json.jobTitle }}",
+            "location": "={{ $json.location }}",
+            "salaryRange": "={{ $json.salaryRange }}",
+            "jobUrl": "={{ $json.jobUrl }}",
+            "jobDescription": "={{ $json.jobDescription }}",
+            "status": "={{ $json.status }}",
+            "notes": "={{ $json.notes }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "google-sheets-001",
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        640,
+        544
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Info": {
+      "main": [
+        [
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-01-21T00:00:00.000Z",
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1875c354e68add66bfcb88b2f89ad58e5496268bf95948e7520bbb6eb498bbed"
+  }
+}

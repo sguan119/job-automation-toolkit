@@ -1,0 +1,265 @@
+{
+  "name": "HTML to PDF Converter",
+  "nodes": [
+    {
+      "id": "trigger-1",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [0, 300],
+      "parameters": {
+        "formTitle": "HTML to PDF Converter",
+        "formDescription": "Upload an HTML file or paste HTML content to convert to PDF",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "HTML Content",
+              "fieldType": "textarea",
+              "requiredField": false,
+              "placeholder": "Paste your HTML content here (optional if uploading file)"
+            },
+            {
+              "fieldLabel": "HTML File",
+              "fieldType": "file",
+              "requiredField": false,
+              "acceptFileTypes": ".html,.htm"
+            }
+          ]
+        },
+        "respondWith": "text",
+        "responseText": "Converting HTML to PDF... Please wait."
+      },
+      "webhookId": "html-to-pdf"
+    },
+    {
+      "id": "workflow-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 100]
+    },
+    {
+      "id": "process-subworkflow-input",
+      "name": "Process Sub-workflow Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 100],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const input = $input.first();\nlet htmlContent = '';\nlet fileName = 'converted';\n\n// Check for binary data (HTML file from parent workflow)\nif (input.binary && input.binary.resume) {\n  const binaryData = input.binary.resume;\n  htmlContent = Buffer.from(binaryData.data, 'base64').toString('utf-8');\n  fileName = binaryData.fileName?.replace(/\\.html$/i, '') || 'converted';\n}\n// Check for htmlContent in JSON\nelse if (input.json.htmlContent) {\n  htmlContent = input.json.htmlContent;\n  fileName = input.json.fileName || 'converted';\n}\n// Check for resumeHtml in JSON\nelse if (input.json.resumeHtml) {\n  htmlContent = input.json.resumeHtml;\n  fileName = input.json.fileName || 'converted';\n}\nelse {\n  throw new Error('No HTML content provided to sub-workflow');\n}\n\nreturn [{\n  json: {\n    htmlContent: htmlContent,\n    pageSize: 'Letter',\n    orientation: 'portrait',\n    fileName: fileName\n  }\n}];"
+      }
+    },
+    {
+      "id": "process-input",
+      "name": "Process Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const input = $input.first().json;\nconst body = input.body || input;\n\nlet htmlContent = '';\n\n// Check if HTML content was pasted\nif (body['HTML Content'] && body['HTML Content'].trim()) {\n  htmlContent = body['HTML Content'];\n}\n// Check if file was uploaded (binary data)\nelse if ($input.first().binary && $input.first().binary['HTML File']) {\n  const binaryData = $input.first().binary['HTML File'];\n  htmlContent = Buffer.from(binaryData.data, 'base64').toString('utf-8');\n}\nelse {\n  throw new Error('Please provide HTML content or upload an HTML file');\n}\n\n// Fixed page settings for resume\nconst pageSize = 'Letter';\nconst orientation = 'portrait';\n\nreturn [{\n  json: {\n    htmlContent: htmlContent,\n    pageSize: pageSize,\n    orientation: orientation,\n    fileName: `converted_${Date.now()}`\n  }\n}];"
+      }
+    },
+    {
+      "id": "convert-to-pdf",
+      "name": "Convert to PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// This node prepares the HTML for PDF conversion\n// Gotenberg requires the file to be named 'index.html'\n\nconst data = $input.first().json;\nconst htmlContent = data.htmlContent;\nconst pageSize = data.pageSize;\nconst orientation = data.orientation;\n\n// Add print-friendly CSS wrapper\nconst printStyles = `\n<style>\n  @page {\n    size: ${pageSize} ${orientation};\n    margin: 1cm;\n  }\n  @media print {\n    body {\n      -webkit-print-color-adjust: exact;\n      print-color-adjust: exact;\n    }\n  }\n</style>\n`;\n\n// Inject print styles into HTML\nlet finalHtml = htmlContent;\nif (htmlContent.includes('</head>')) {\n  finalHtml = htmlContent.replace('</head>', printStyles + '</head>');\n} else if (htmlContent.includes('<body')) {\n  finalHtml = printStyles + htmlContent;\n} else {\n  finalHtml = `<!DOCTYPE html><html><head>${printStyles}</head><body>${htmlContent}</body></html>`;\n}\n\nreturn [{\n  json: {\n    htmlContent: finalHtml,\n    pageSize: pageSize,\n    orientation: orientation,\n    fileName: data.fileName\n  },\n  binary: {\n    htmlFile: {\n      data: Buffer.from(finalHtml).toString('base64'),\n      mimeType: 'text/html',\n      fileName: 'index.html'\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "gotenberg-pdf",
+      "name": "Gotenberg PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "files",
+              "parameterType": "formBinaryData",
+              "inputDataFieldName": "htmlFile"
+            },
+            {
+              "name": "paperWidth",
+              "value": "8.5"
+            },
+            {
+              "name": "paperHeight",
+              "value": "11"
+            },
+            {
+              "name": "landscape",
+              "value": "false"
+            },
+            {
+              "name": "marginTop",
+              "value": "0.25"
+            },
+            {
+              "name": "marginBottom",
+              "value": "0.25"
+            },
+            {
+              "name": "marginLeft",
+              "value": "0.5"
+            },
+            {
+              "name": "marginRight",
+              "value": "0.5"
+            },
+            {
+              "name": "printBackground",
+              "value": "true"
+            },
+            {
+              "name": "scale",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Using Gotenberg (Docker: gotenberg/gotenberg:8). Run: docker run -p 3000:3000 gotenberg/gotenberg:8"
+    },
+    {
+      "id": "rename-pdf",
+      "name": "Rename PDF File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 100],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const input = $input.first();\nconst previousData = $('Convert to PDF').first().json;\n\nif (!input.binary) {\n  throw new Error('No binary data received from conversion service');\n}\n\n// Gotenberg returns PDF in 'data' key, not 'htmlFile'\nconst pdfBinary = input.binary.data;\nif (!pdfBinary) {\n  throw new Error('No PDF data found. Available keys: ' + Object.keys(input.binary).join(', '));\n}\n\nconst fileName = previousData.fileName || 'converted';\n\nreturn [{\n  json: {\n    success: true,\n    fileName: `${fileName}.pdf`,\n    pageSize: previousData.pageSize,\n    orientation: previousData.orientation\n  },\n  binary: {\n    pdf: {\n      ...pdfBinary,\n      fileName: `${fileName}.pdf`,\n      mimeType: 'application/pdf'\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "download-pdf",
+      "name": "Download PDF",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [1100, 100],
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "PDF Generated Successfully!",
+        "completionMessage": "=Your HTML has been converted to PDF.\n\nFile: {{ $json.fileName }}\nPage Size: {{ $json.pageSize }}\nOrientation: {{ $json.orientation }}\n\nClick the button below to download your PDF.",
+        "options": {
+          "respondWithBinary": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Process Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Process Sub-workflow Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Sub-workflow Input": {
+      "main": [
+        [
+          {
+            "node": "Convert to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Input": {
+      "main": [
+        [
+          {
+            "node": "Convert to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to PDF": {
+      "main": [
+        [
+          {
+            "node": "Gotenberg PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gotenberg PDF": {
+      "main": [
+        [
+          {
+            "node": "Rename PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rename PDF File": {
+      "main": [
+        [
+          {
+            "node": "Download PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "pdf",
+      "id": "1"
+    },
+    {
+      "name": "converter",
+      "id": "2"
+    },
+    {
+      "name": "html",
+      "id": "3"
+    }
+  ]
+}
